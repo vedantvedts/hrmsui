@@ -86,3 +86,39 @@ export const updateUser = async (data) => {
         throw error;
     }
 };
+
+export const getSignAuthorityRoles = async () => {
+    try {
+        return (await axios.get(`${API_URL}api/master/sign-auth-roles`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error("Error fetching Sign Authority Roles:", error);
+        throw error;
+    }
+};
+
+export const getSignAuthorityList = async () => {
+    try {
+        return (await axios.get(`${API_URL}api/master/sign-authority`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getSignAuthorityList():', error);
+        throw error;
+    }
+};
+
+export const insertSignRoleAuthority = async (payload) => {
+    try {
+        return (await axios.post(`${API_URL}api/master/add-sign-authority`, payload, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in insertSignRoleAuthority():', error);
+        throw error;
+    }
+};
+
+export const updateSignRoleAuthority = async (payload) => {
+    try {
+        return (await axios.put(`${API_URL}api/master/update-sign-authority`, payload, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in updateSignRoleAuthority():', error);
+        throw error;
+    }
+};

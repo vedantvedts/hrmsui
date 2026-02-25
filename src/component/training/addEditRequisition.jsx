@@ -42,6 +42,8 @@ const AddEditRequisition = () => {
         initiatingOfficer: Number(empId) || "",
         isSubmitted: "N",
         necessity: "",
+        venue: "",
+        registrationFee: "",
         multipartFileEcs: null,
         multipartFileCheque: null,
         multipartFilePan: null,
@@ -100,6 +102,8 @@ const AddEditRequisition = () => {
                     fromDate: data.fromDate ? new Date(data.fromDate) : null,
                     toDate: data.toDate ? new Date(data.toDate) : null,
                     duration: data.duration || "",
+                    venue: data.venue || "",
+                    registrationFee: data.registrationFee || "0",
                     reference: data.reference || "",
                     organizedBy: data.organizer || "",
                     modeOfPayment: data.modeOfPayment || "Only through ECS",
@@ -130,9 +134,9 @@ const AddEditRequisition = () => {
         navigate("/requisition");
     };
 
-    const handleDownload = async (reqId,file) => {
+    const handleDownload = async (reqId, file) => {
 
-        let response = await reqFileDownload(reqId,file);
+        let response = await reqFileDownload(reqId, file);
 
         const { data, fileName, contentType } = response;
 
@@ -184,7 +188,8 @@ const AddEditRequisition = () => {
         "image/png"
     ];
     const FILE_SIZE = 10 * 1024 * 1024; // 10MB
-    const fileValidation = (fieldName) =>
+
+    const requiredFileValidation = (fieldName) =>
         Yup.mixed()
             .required(`${fieldName} is required`)
             .test("fileSize", "File size must be less than 10MB", (value) => {
@@ -194,38 +199,65 @@ const AddEditRequisition = () => {
                 return value && SUPPORTED_FORMATS.includes(value.type);
             });
 
-    const validationSchema = Yup.object().shape({
+    const optionalFileValidation = (fieldName) =>
+        Yup.mixed()
+            .nullable()
+            .test("fileSize", "File size must be less than 10MB", (value) => {
+                if (!value) return true;
+                return value.size <= FILE_SIZE;
+            })
+            .test("fileFormat", "Only PDF or Image files are allowed", (value) => {
+                if (!value) return true;
+                return SUPPORTED_FORMATS.includes(value.type);
+            });
+
+    const buildValidationSchema = (isEdit) => Yup.object().shape({
         programId: Yup.string().required("Program is required"),
         fromDate: Yup.date().required("From Date is required"),
         toDate: Yup.date()
             .required("To Date is required")
             .min(Yup.ref("fromDate"), "To Date must be after From Date"),
-        organizedBy: Yup.string().required("Organized By is required"),
-        modeOfPayment: Yup.string().required("Payment Mode is required"),
+        organizedBy: Yup.string().trim().required("Organized By is required"),
+        venue: Yup.string().trim().required("Venue is required").nullable(),
+        registrationFee: Yup.number().typeError("Registration Fee must be a number").min(0, "Registration Fee cannot be negative").nullable(),
+        modeOfPayment: Yup.string().trim().required("Payment Mode is required"),
         initiatingOfficer: Yup.string().required("Initiating Officer is required"),
-        necessity: Yup.string().required("Necessity of course is required"),
-        multipartFileEcs: fileValidation("ECS file"),
-        multipartFileCheque: fileValidation("Blank cancelled cheque file"),
-        multipartFilePan: fileValidation("PAN card file"),
-        multipartFileBrochure: fileValidation("Brochure file"),
+        necessity: Yup.string().trim().required("Necessity of course is required"),
+        multipartFileEcs: isEdit ? optionalFileValidation("ECS file") : requiredFileValidation("ECS file"),
+        multipartFileCheque: isEdit ? optionalFileValidation("Blank cancelled cheque file") : requiredFileValidation("Blank cancelled cheque file"),
+        multipartFilePan: isEdit ? optionalFileValidation("PAN card file") : requiredFileValidation("PAN card file"),
+        multipartFileBrochure: isEdit ? optionalFileValidation("Brochure file") : requiredFileValidation("Brochure file"),
     });
 
     const programSchema = Yup.object().shape({
-        programName: Yup.string().required("Program Name is required"),
+        programName: Yup.string().trim().required("Program Name is required"),
         organizedBy: Yup.string().required("Organized By is required"),
         fromDate: Yup.date().required("From Date is required"),
         toDate: Yup.date()
             .required("To Date is required")
             .min(Yup.ref("fromDate"), "To Date must be after From Date"),
+        isRegistration: Yup.string().required("Please specify if registration fee is applicable"),
+        registrationFee: Yup.number().when("isRegistration", {
+            is: "Y",
+            then: (schema) =>
+                schema
+                    .typeError("Registration Fee must be a number")
+                    .required("Registration Fee is required")
+                    .positive("Registration Fee must be positive"),
+            otherwise: (schema) => schema.nullable(),
+        }),
+        venue: Yup.string().trim().required("Venue is required"),
     });
 
     const handleProgramSubmit = async (values, { resetForm, setSubmitting }) => {
         try {
             const dto = {
-                agencyId: values.organizedBy,
+                organizerId: values.organizedBy,
                 programName: values.programName,
                 fromDate: format(values.fromDate, "yyyy-MM-dd"),
                 toDate: format(values.toDate, "yyyy-MM-dd"),
+                registrationFee: values.isRegistration === "Y" ? values.registrationFee : 0,
+                venue: values.venue,
             }
 
             const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
@@ -292,6 +324,8 @@ const AddEditRequisition = () => {
         setFieldValue("fromDate", fromDate);
         setFieldValue("toDate", toDate);
         setFieldValue("organizedBy", newOrgData ? newOrgData.organizer : "");
+        setFieldValue("venue", programData ? programData.venue : "");
+        setFieldValue("registrationFee", programData ? programData.registrationFee : 0);
 
         calculateDuration(fromDate, toDate, setFieldValue);
     };
@@ -355,11 +389,11 @@ const AddEditRequisition = () => {
                     <Formik
                         innerRef={formikRef}
                         initialValues={initialValues}
-                        validationSchema={validationSchema}
+                        validationSchema={buildValidationSchema(!!requisitionId)}
                         enableReinitialize
                         onSubmit={handleSubmit}
                     >
-                        {({ values, setFieldValue, isSubmitting , setFieldTouched}) => (
+                        {({ values, setFieldValue, isSubmitting, setFieldTouched }) => (
                             <Form autoComplete="off">
                                 <div className="row g-3 custom-modal-body p-3">
 
@@ -421,31 +455,43 @@ const AddEditRequisition = () => {
                                         <ErrorMessage name="toDate" component="div" className="text-danger small" />
                                     </div>
 
-                                    <div className="col-md-1">
+                                    <div className="col-md-2">
                                         <label className="form-label">Duration</label>
                                         <Field name="duration" type="text" className="form-control" placeholder="In Days" disabled />
                                         <ErrorMessage name="duration" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-2">
+                                    <div className="col-md-3">
                                         <label className="form-label">Organized By</label>
                                         <Field name="organizedBy" type="text" className="form-control" disabled />
                                         <ErrorMessage name="organizedBy" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-2">
+                                    <div className="col-md-3">
                                         <label className="form-label">Reference</label>
                                         <Field name="reference" type="text" className="form-control" />
                                         <ErrorMessage name="reference" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-2">
+                                    <div className="col-md-3">
+                                        <label className="form-label">Venue</label>
+                                        <Field name="venue" type="text" className="form-control" disabled/>
+                                        <ErrorMessage name="venue" component="div" className="invalid-msg" />
+                                    </div>
+
+                                    <div className="col-md-3">
+                                        <label className="form-label">Registration Fee (₹)</label>
+                                        <Field name="registrationFee" type="number" className="form-control" disabled/>
+                                        <ErrorMessage name="registrationFee" component="div" className="invalid-msg" />
+                                    </div>
+
+                                     <div className="col-md-3">
                                         <label className="form-label">Payment Mode</label>
                                         <Field name="modeOfPayment" type="text" className="form-control" />
                                         <ErrorMessage name="modeOfPayment" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-3">
+                                    <div className="col-md-4">
                                         <label className="form-label">Initiating Officer</label>
                                         <Select
                                             options={employeeOptions}
@@ -457,7 +503,7 @@ const AddEditRequisition = () => {
                                         <ErrorMessage name="initiatingOfficer" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-6 mt-5">
+                                    <div className="col-md-8 mt-5">
                                         <span className="form-label me-3">
                                             Feedback / Impact forms / Participation certificate of previous course submitted
                                         </span>
@@ -514,7 +560,7 @@ const AddEditRequisition = () => {
                                                             <button
                                                                 type="button"
                                                                 className="btn btn-link text-primary p-0 small text-decoration-none"
-                                                                onClick={() => handleDownload(requisitionId,existingFiles[item.name].name)}
+                                                                onClick={() => handleDownload(requisitionId, existingFiles[item.name].name)}
                                                             >
                                                                 <BsFileEarmark className="me-1 mb-1" />
                                                                 {existingFiles[item.name].name}
@@ -603,6 +649,9 @@ const AddEditRequisition = () => {
                                             organizedBy: "",
                                             fromDate: null,
                                             toDate: null,
+                                            registrationFee: null,
+                                            isRegistration: "N",
+                                            venue: "",
                                         }}
                                         validationSchema={programSchema}
                                         onSubmit={handleProgramSubmit}
@@ -633,7 +682,7 @@ const AddEditRequisition = () => {
                                                         <ErrorMessage name="organizedBy" component="div" className="invalid-msg" />
                                                     </div>
 
-                                                    <div className="col-md-6 mb-3">
+                                                    <div className="col-md-4 mb-3">
                                                         <label className="form-label">From Date</label>
                                                         <DatePicker
                                                             selected={values.fromDate}
@@ -651,7 +700,7 @@ const AddEditRequisition = () => {
                                                         <ErrorMessage name="fromDate" component="div" className="invalid-msg" />
                                                     </div>
 
-                                                    <div className="col-md-6 mb-3">
+                                                    <div className="col-md-4 mb-3">
                                                         <label className="form-label">To Date</label>
                                                         <DatePicker
                                                             selected={values.toDate}
@@ -668,6 +717,33 @@ const AddEditRequisition = () => {
                                                             onKeyDown={(event) => event.preventDefault()}
                                                         />
                                                         <ErrorMessage name="toDate" component="div" className="invalid-msg" />
+                                                    </div>
+
+                                                    <div className="col-md-4 mb-3">
+                                                        <label className="form-label">Registration Fee Applicable</label>
+                                                        <Field className="form-control" name="isRegistration" as="select">
+                                                            <option value="">Select</option>
+                                                            <option value="Y">Yes</option>
+                                                            <option value="N">No</option>
+                                                        </Field>
+                                                        <ErrorMessage name="isRegistration" component="div" className="invalid-msg" />
+                                                    </div>
+
+                                                    {values.isRegistration === "Y" && (
+                                                        <div className="col-md-6 mb-3">
+                                                            <label className="form-label">Registration Fee (₹)</label>
+                                                            <Field className="form-control" name="registrationFee" type="number" />
+                                                            <ErrorMessage name="registrationFee" component="div" className="invalid-msg" />
+                                                        </div>
+                                                    )}
+
+                                                    <div className="col-md-6 mb-3">
+                                                        <label className="form-label">Venue</label>
+                                                        <Field
+                                                            name="venue"
+                                                            className="form-control"
+                                                        />
+                                                        <ErrorMessage name="venue" component="div" className="invalid-msg" />
                                                     </div>
 
                                                 </div>

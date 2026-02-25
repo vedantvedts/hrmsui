@@ -10,6 +10,7 @@ import FormRoleAccess from "../component/admin/roleAccess";
 import Requisition from "../component/training/requisition";
 import Calendar from "../component/training/calendar";
 import AddEditRequisition from "../component/training/addEditRequisition";
+import SignAuthority from "../component/master/signAuthority";
 
 
 function AppRoutes() {
@@ -43,6 +44,7 @@ function AppRoutes() {
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/requisition" element={<Requisition />} />
         <Route path="/req-add-edit" element={<AddEditRequisition />} />
+        <Route path="/sign-authority" element={<SignAuthority />} />
       </Routes>
 
     </>
