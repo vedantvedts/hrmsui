@@ -7,12 +7,15 @@ import Swal from "sweetalert2";
 import { format } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { FaEdit, FaRegEdit } from "react-icons/fa";
+import { MdFeedback } from "react-icons/md";
 
 
 const Requisition = () => {
 
     const [requisitionList, setRequisitionList] = useState([]);
     const navigate = useNavigate();
+    const empId = localStorage.getItem("empId");
+
 
     useEffect(() => {
         fetchAgencies();
@@ -62,6 +65,17 @@ const Requisition = () => {
                             <FaEdit className="fs-6" />
                         </button>
                     }
+                    {Number(item.initiatingOfficer) === Number(empId) &&
+                        <button
+                            className="btn btn-sm btn-info"
+                            onClick={() => handleFeedbackClick(item)}
+                            data-tooltip-id="Tooltip"
+                            data-tooltip-content="Feedback"
+                            data-tooltip-place="top"
+                        >
+                            <MdFeedback className="fs-6 text-white" />
+                        </button>
+                    }
                 </>
             )
         }));
@@ -75,6 +89,11 @@ const Requisition = () => {
     const handleEdit = async (item) => {
         navigate("/req-add-edit", { state: { requisitionId: item.requisitionId } });
     };
+
+    const handleFeedbackClick = (item) => {
+        navigate("/feedback-add", { state: item });
+
+    }
 
     return (
         <div>

@@ -144,3 +144,92 @@
   color: #dc3545;
   margin-top: 3px;
 }
+
+/* Synchronize styles */
+
+
+  .loading-text {
+  margin-top: 20px;
+  font-family: 'Inter', sans-serif;
+  color: red;
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+}
+
+
+/* 1. The Full Screen Blocker */
+.sync-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #f8fafc; /* Clean light background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999; /* Higher than any navbar or sidebar */
+}
+
+.loader-content {
+  text-align: center;
+}
+
+/* 2. The Triple Pulse Spinner */
+.pulse-loader {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.pulse-loader div {
+  position: absolute;
+  border: 4px solid #3b82f6; /* Modern Blue */
+  opacity: 1;
+  border-radius: 50%;
+  animation: pulse-ring 1.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+.pulse-loader div:nth-child(2) {
+  animation-delay: -0.5s;
+}
+@keyframes pulse-ring {
+  0% { top: 36px; left: 36px; width: 0; height: 0; opacity: 1; }
+  100% { top: 0px; left: 0px; width: 72px; height: 72px; opacity: 0; }
+}
+
+/* 3. Text & Progress Bar Styling */
+.loading-text {
+  margin-top: 20px;
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+}
+
+.loading-subtext {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+.loading-bar-container {
+  width: 200px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  margin: 15px auto;
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  width: 100%;
+  height: 100%;
+  background: #3b82f6;
+  animation: loading-slide 1.5s infinite ease-in-out;
+  transform-origin: left;
+}
+
+@keyframes loading-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

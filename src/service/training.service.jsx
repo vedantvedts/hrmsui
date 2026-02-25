@@ -176,3 +176,21 @@ export const reqFileDownload = async (reqId,file) => {
         return { data: '0' };
     }
 };
+
+export const requisitionFeedback = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/requisition-feedback`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in requisitionFeedback():', error);
+        throw error;
+    }
+};
+
+export const getFeedbackList = async () => {
+    try {
+        return (await axios.get(`${API_URL}api/training/feedback-list`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getFeedbackList():', error);
+        throw error;
+    }
+};

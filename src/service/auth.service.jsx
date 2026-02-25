@@ -4,6 +4,7 @@ import { authHeader } from './auth.header';
 import { authenticationDetails } from './admin.service';
 
 const API_URL = config.API_URL;
+const LABCODE = config.LABCODE;
 
 
 export const login = async (username, password) => {
@@ -15,7 +16,7 @@ export const login = async (username, password) => {
 
     const loginData = {
       username: username.trim(),
-      password: encryptedPassword,
+      password: LABCODE==='CAIR' ? password : encryptedPassword,
       timestamp: timestamp
     };
 
@@ -48,6 +49,31 @@ export const login = async (username, password) => {
     }
   } catch (error) {
     console.error('Error occurred in login:', error);
+    throw error;
+  }
+};
+
+export const setLocalStorageData = async (username) => {
+  if (!username) {
+    throw new Error('No user found');
+  }
+
+  try {
+     const emp = await getUserDetails(username);
+
+      console.log('User details:', emp);
+
+      localStorage.setItem('loginId', emp?.data.loginId);
+      localStorage.setItem('empId', emp?.data.empId);
+      localStorage.setItem('empName', emp?.data.empName);
+      localStorage.setItem('roleName', emp?.data.roleName);
+      localStorage.setItem('designationCode', emp?.data.empDesigName);
+      localStorage.setItem('title', emp?.data.title);
+      localStorage.setItem('roleId', emp?.data.roleId);
+      //await customAuditStampingLogin(username);
+    
+  } catch (error) {
+    console.error('Error occurred in getEmpDetails()', error);
     throw error;
   }
 };
