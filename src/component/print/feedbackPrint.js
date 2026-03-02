@@ -253,9 +253,18 @@ export const FeedbackPrint = (reqData) => {
                         ]
                     },
                     {
-                        text: "Signature of participant",
                         alignment: "right",
                         margin: [0, 30, 0, 0],
+                        stack: [
+                            {
+                                text: reqData.employeeName || "",
+                                bold: true,
+                            },
+                            {
+                                text: "Signature of Participant",
+                                margin: [0, 5, 0, 0]
+                            }
+                        ]
                     }
                 ]
             },

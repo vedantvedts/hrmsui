@@ -6,6 +6,17 @@ pdfMake.vfs = pdfFonts.vfs;
 
 export const RequisitionPrint = (reqData) => {
 
+    const formatDateTime = (date) => {
+        if (!date) return "";
+        try {
+            return format(new Date(date), "dd-MM-yyyy hh:mm a");
+        } catch (error) {
+            return "";
+        }
+    };
+
+    const isApproved = !!reqData?.approvedDate;
+
     const docDefinition = {
         pageSize: "A4",
         pageMargins: [35, 120, 40, 60],
@@ -362,74 +373,156 @@ export const RequisitionPrint = (reqData) => {
                 }
             },
             {
-                margin: [0, 90, 0, 0],
+                margin: [0, 60, 0, 0],
                 columns: [
                     {
-                        text: "Date",
                         alignment: "left",
-                        margin: [0, 0, 0, 5]
-                    },
-                    {
-                        text: "Division/Group Head",
-                        alignment: "right",
-                        margin: [0, 0, 0, 5]
-                    }
-                ]
-            },
-            {
-                canvas: [
-                    {
-                        type: 'line',
-                        x1: 0, y1: 0,
-                        x2: 520, y2: 0,
-                        lineWidth: 1
-                    }
-                ]
-            },
-            {
-                margin: [0, 120, 0, 0],
-                columns: [
-                    {
-                        text: "Date",
-                        alignment: "left",
-                        margin: [0, 0, 0, 5]
-                    },
-                    {
-                        width: 200,
-                        alignment: "center",
-                        columns: [
+                        stack: [
                             {
-                                canvas: [
-                                    { type: 'rect', x: 0, y: 0, w: 10, h: 10 }
-                                ],
-                                width: 15
+                                text: formatDateTime(reqData?.forwardDate),
+                                bold: true,
+                                color: "#0d47a1",
+                                fontSize: 11
                             },
-                            { text: "Approved", margin: [0, -2, 15, 0] },
-
                             {
-                                canvas: [
-                                    { type: 'rect', x: 0, y: 0, w: 10, h: 10 }
-                                ],
-                                width: 15
-                            },
-                            { text: "Not Approved", margin: [0, -2, 0, 0] }
+                                text: "Date",
+                                margin: [0, 5, 0, 0]
+                            }
                         ]
                     },
                     {
-                        text: "AD (HRT)",
                         alignment: "right",
-                        margin: [0, 0, 0, 5]
+                        stack: [
+                            {
+                                text: (reqData?.initiatingOfficerName + ", " + reqData?.empDesigName) || "",
+                                bold: true,
+                                color: "#0d47a1",
+                                fontSize: 11
+                            },
+                            {
+                                text: "Initiating Officer",
+                                margin: [0, 5, 0, 0]
+                            }
+                        ]
                     }
                 ]
             },
             {
                 canvas: [
+                    { type: 'line', x1: 0, y1: 0, x2: 520, y2: 0, lineWidth: 1 }
+                ]
+            },
+            {
+                margin: [0, 50, 0, 0],
+                columns: [
                     {
-                        type: 'line',
-                        x1: 0, y1: 0,
-                        x2: 520, y2: 0,
-                        lineWidth: 1
+                        alignment: "left",
+                        stack: [
+                            {
+                                text: formatDateTime(reqData?.verifiedDate),
+                                bold: true,
+                                color: "#0d47a1",
+                                fontSize: 11
+                            },
+                            {
+                                text: "Date",
+                                margin: [0, 5, 0, 0]
+                            }
+                        ]
+                    },
+                    {
+                        alignment: "right",
+                        stack: [
+                            {
+                                text: reqData?.verifiedOfficerName || "",
+                                bold: true,
+                                color: "#0d47a1",
+                                fontSize: 11
+                            },
+                            {
+                                text: "Division/Group Head",
+                                margin: [0, 5, 0, 0]
+                            }
+                        ]
                     }
+                ]
+            },
+            {
+                canvas: [
+                    { type: 'line', x1: 0, y1: 0, x2: 520, y2: 0, lineWidth: 1 }
+                ]
+            },
+            {
+                margin: [0, 70, 0, 0],
+                columns: [
+                    {
+                        alignment: "left",
+                        stack: [
+                            {
+                                text: formatDateTime(reqData?.approvedDate),
+                                bold: true,
+                                color: "#0d47a1",
+                                fontSize: 11
+                            },
+                            {
+                                text: "Date",
+                                margin: [0, 5, 0, 0]
+                            }
+                        ]
+                    },
+                    {
+                        width: 150,
+                        alignment: "center",
+                        columns: isApproved
+                            ? [
+                                {
+                                    canvas: [
+                                        { type: 'rect', x: 0, y: 0, w: 10, h: 10 },
+                                        { type: 'line', x1: 1, y1: 5, x2: 4, y2: 9 },
+                                        { type: 'line', x1: 4, y1: 9, x2: 9, y2: 1 }
+                                    ],
+                                    width: 10
+                                },
+                                {
+                                    text: "Approved",
+                                    margin: [0, 0, 25, 0]
+                                }
+                            ]
+                            : [
+                                {
+                                    canvas: [
+                                        { type: 'rect', x: 0, y: 0, w: 10, h: 10 },
+                                        { type: 'line', x1: 1, y1: 1, x2: 9, y2: 9 },
+                                        { type: 'line', x1: 9, y1: 1, x2: 1, y2: 9 }
+                                    ],
+                                    width: 15
+                                },
+                                {
+                                    text: "Not Approved",
+                                    margin: [0, 0, 0, 0]
+                                }
+                            ]
+                    },
+                    {
+                        alignment: "right",
+                        stack: [
+                            {
+                                text: reqData?.approvedOfficerName || "",
+                                bold: true,
+                                color: "#0d47a1",
+                                fontSize: 11
+                            },
+                            {
+                                text: "AD (HRT)",
+                                margin: [0, 5, 0, 0]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                canvas: [
+                    { type: 'line', x1: 0, y1: 0, x2: 520, y2: 0, lineWidth: 1 }
                 ]
             }
         ]

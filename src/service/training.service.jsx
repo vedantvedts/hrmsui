@@ -194,3 +194,50 @@ export const getFeedbackList = async () => {
         throw error;
     }
 };
+
+export const forwardRequisition = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/forward-req`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in forwardRequisition():', error);
+        throw error;
+    }
+};
+
+export const recommendRequisition = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/recommend-req`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in recommendRequisition():', error);
+        throw error;
+    }
+};
+
+export const getRequisitionPrint = async (id) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/requisition-print/${id}`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getRequisitionPrint():', error);
+        throw error;
+    }
+};
+
+export const getRequisitionApprovals = async (id) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/req-approval-list`, { 
+            params: { empId: id },
+            headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getRequisitionPrint():', error);
+        throw error;
+    }
+};
+
+export const getReqTransactionList = async (reqId) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/req-transaction/${reqId}`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getReqTransactionList():', error);
+        throw error;
+    }
+};

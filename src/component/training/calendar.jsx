@@ -53,7 +53,7 @@ const Calendar = () => {
             fetchCalenderList(selectedYear);
         }
     }, [selectedYear]);
-    
+
     useEffect(() => {
         fetchAgencies();
     }, []);
@@ -79,20 +79,20 @@ const Calendar = () => {
     };
 
     const [initialValues, setInitialValues] = useState({
-        agencyId: "",
+        organizerId: "",
         trainingName: "",
         file: null,
     });
 
     const validationSchema = Yup.object().shape({
-        agencyId: Yup.string().required("Agency is required"),
+        organizerId: Yup.string().required("Agency is required"),
         trainingName: Yup.string().required("Training Name is required"),
         file: Yup.mixed().required("File is required"),
     });
 
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-        { name: "Agency", selector: (row) => row.agency, sortable: true, align: 'text-center' },
+        { name: "Organizer", selector: (row) => row.agency, sortable: true, align: 'text-center' },
         { name: "Training Name", selector: (row) => row.trainingName, sortable: true, align: 'text-center' },
         { name: "Uploaded Date", selector: (row) => row.uploadDate, sortable: true, align: 'text-center' },
         { name: "File", selector: (row) => row.file, sortable: true, align: 'text-center' },
@@ -164,7 +164,13 @@ const Calendar = () => {
             }
             const response = await addCalenderData(dto);
             if (response && response.success) {
-                Swal.fire("Success", response.message, "success");
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: response.message,
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
                 closeModal();
                 resetForm();
                 fetchCalenderList(selectedYear);
@@ -179,14 +185,14 @@ const Calendar = () => {
     };
 
     const usedAgencyIds = new Set(
-        calendarList.map(item => item?.agencyId)
+        calendarList.map(item => item?.organizerId)
     );
 
     const agencyOptions = agencyList
-        .filter(data => !usedAgencyIds.has(data?.agencyId))
+        .filter(data => !usedAgencyIds.has(data?.organizerId))
         .map(data => ({
-            value: data?.agencyId,
-            label: data?.agency
+            value: data?.organizerId,
+            label: data?.organizer
         }));
 
     return (
@@ -278,14 +284,14 @@ const Calendar = () => {
 
                                                 <div className="row g-3">
                                                     <div className="col-md-4">
-                                                        <label className="form-label">Agency</label>
+                                                        <label className="form-label">Organizer</label>
                                                         <Select
                                                             className="cs-select"
                                                             options={agencyOptions}
                                                             value={agencyOptions.find(o => o.value === values.agencyId)}
-                                                            onChange={o => setFieldValue("agencyId", o?.value || "")}
+                                                            onChange={o => setFieldValue("organizerId", o?.value || "")}
                                                         />
-                                                        <ErrorMessage name="agencyId" component="div" className="invalid-msg" />
+                                                        <ErrorMessage name="organizerId" component="div" className="invalid-msg" />
                                                     </div>
 
                                                     <div className="col-md-4">

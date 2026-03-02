@@ -2,31 +2,45 @@ import { useEffect, useState } from "react";
 import Datatable from "../../datatable/Datatable";
 import Navbar from "../navbar/Navbar";
 import { useNavigate } from "react-router-dom";
-import { getRequisitions } from "../../service/training.service";
+import { forwardRequisition, getFeedbackList, getRequisitionPrint, getRequisitions } from "../../service/training.service";
 import Swal from "sweetalert2";
 import { format } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { MdFeedback } from "react-icons/md";
 import { FaEdit } from "react-icons/fa";
 import RequisitionPrint from "../print/requisition";
-import { FaEye } from "react-icons/fa6";
+import { FaEye, FaForward } from "react-icons/fa6";
+import { handleApiError } from "../../service/master.service";
+import AlertConfirmation from "../../common/AlertConfirmation.component";
 
 
 const Requisition = () => {
 
     const [requisitionList, setRequisitionList] = useState([]);
+    const [feedbackList, setFeedbackList] = useState([]);
     const navigate = useNavigate();
     const empId = localStorage.getItem("empId");
 
 
     useEffect(() => {
-        fetchAgencies();
+        fetchRequisitions();
+        fetchFeedbacks();
     }, []);
 
-    const fetchAgencies = async () => {
+    const fetchRequisitions = async () => {
         try {
             const response = await getRequisitions();
             setRequisitionList(response?.data || []);
+        } catch (error) {
+            console.error("Error fetching requisitions:", error);
+            Swal.fire("Error", "Failed to fetch requisition data. Please try again later.", "error");
+        }
+    };
+
+    const fetchFeedbacks = async () => {
+        try {
+            const response = await getFeedbackList();
+            setFeedbackList(response?.data || []);
         } catch (error) {
             console.error("Error fetching requisitions:", error);
             Swal.fire("Error", "Failed to fetch requisition data. Please try again later.", "error");
@@ -42,58 +56,93 @@ const Requisition = () => {
         { name: "To Date", selector: (row) => row.toDate, sortable: true, align: 'text-center' },
         { name: "Initiating Officer", selector: (row) => row.initiatingOfficer, sortable: true, align: 'text-left' },
         { name: "Designation", selector: (row) => row.designation, sortable: true, align: 'text-center' },
+        { name: "Status", selector: (row) => row.status, sortable: true, align: 'text-left' },
         { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' },
     ];
 
     const mappedData = () => {
-        return requisitionList.map((item, index) => ({
-            sn: index + 1,
-            programName: item.programName || "-",
-            organizer: item.organizer || "-",
-            duration: item.duration || "-",
-            fromDate: item.fromDate ? format(new Date(item.fromDate), "dd-MM-yyyy") : "-",
-            toDate: item.toDate ? format(new Date(item.toDate), "dd-MM-yyyy") : "-",
-            initiatingOfficer: item.initiatingOfficerName || "-",
-            designation: item.empDesigName || "-",
-            action: (
-                <>
-                    <Tooltip id="Tooltip" className='text-white' />
-                    {item.status === 'AA' &&
-                        <button
-                            className="btn btn-sm btn-warning me-2"
-                            onClick={() => handleEdit(item)}
-                            data-tooltip-id="Tooltip"
-                            data-tooltip-content="Edit"
-                            data-tooltip-place="top"
-                        >
-                            <FaEdit className="fs-6" />
-                        </button>
-                    }
-                    {Number(item.initiatingOfficer) === Number(empId) &&
-                        <button
-                            className="btn btn-sm btn-info me-2"
-                            onClick={() => handleFeedbackClick(item)}
-                            data-tooltip-id="Tooltip"
-                            data-tooltip-content="Feedback"
-                            data-tooltip-place="top"
-                        >
-                            <MdFeedback className="fs-6 text-white" />
-                        </button>
-                    }
-                    <button
-                        className="print"
-                        onClick={() => handlePrint(item)}
-                        data-tooltip-id="Tooltip"
-                        data-tooltip-content="Print"
-                        data-tooltip-place="top"
-                    >
-                        <FaEye className="fs-6" />
-                    </button>
-                </>
-            )
-        }));
-    }
+        return requisitionList.map((item, index) => {
 
+            const feedbackExists = feedbackList?.some(
+                feedback => Number(feedback.requisitionId) === Number(item.requisitionId)
+            );
+
+            return {
+                sn: index + 1,
+                programName: item.programName || "-",
+                organizer: item.organizer || "-",
+                duration: item.duration || "-",
+                fromDate: item.fromDate ? format(new Date(item.fromDate), "dd-MM-yyyy") : "-",
+                toDate: item.toDate ? format(new Date(item.toDate), "dd-MM-yyyy") : "-",
+                initiatingOfficer: item.initiatingOfficerName || "-",
+                designation: item.empDesigName || "-",
+                status: <span className="status-badge-modern" onClick={() => handleView(item)}>
+                    {item.statusName || "Unknown"}
+                </span>,
+                action: (
+                    <>
+                        <Tooltip id="Tooltip" className='text-white' />
+
+                        {item.status === 'AA' && (
+                            <>
+                                <button
+                                    className="btn btn-sm btn-warning me-2"
+                                    onClick={() => handleEdit(item)}
+                                    data-tooltip-id="Tooltip"
+                                    data-tooltip-content="Edit"
+                                    data-tooltip-place="top"
+                                >
+                                    <FaEdit className="fs-6" />
+                                </button>
+                                <button
+                                    className="btn btn-sm btn-primary me-2"
+                                    onClick={() => handleForward(item)}
+                                    data-tooltip-id="Tooltip"
+                                    data-tooltip-content="Forward"
+                                    data-tooltip-place="top"
+                                >
+                                    <FaForward className="fs-6" />
+                                </button>
+                            </>
+                        )}
+
+                        {Number(item.initiatingOfficer) === Number(empId) &&
+                            !feedbackExists && (
+                                <button
+                                    className="btn btn-sm btn-info me-2"
+                                    onClick={() => handleFeedbackClick(item)}
+                                    data-tooltip-id="Tooltip"
+                                    data-tooltip-content="Feedback"
+                                    data-tooltip-place="top"
+                                >
+                                    <MdFeedback className="fs-6 text-white" />
+                                </button>
+                            )}
+                        <button
+                            className="print"
+                            onClick={() => handlePrint(item)}
+                            data-tooltip-id="Tooltip"
+                            data-tooltip-content="Print"
+                            data-tooltip-place="top"
+                        >
+                            <FaEye className="fs-6" />
+                        </button>
+                    </>
+                )
+            };
+        });
+    };
+
+    const handleView = (item) => {
+        const dto = {
+            requisitionId : item.requisitionId,
+            programName : item.programName,
+            fromDate : item.fromDate,
+            toDate : item.toDate
+        }
+        localStorage.setItem('transactionData', JSON.stringify(dto));
+        window.open('/transaction', '_blank');
+    }
 
     const handleAdd = () => {
         navigate("/req-add-edit");
@@ -107,10 +156,42 @@ const Requisition = () => {
         navigate("/feedback-add", { state: item });
 
     }
-    const handlePrint = async (letter) => {
-        await RequisitionPrint(letter);
+    const handlePrint = async (item) => {
+        const response = await getRequisitionPrint(item.requisitionId);
+        await RequisitionPrint(response?.data);
     };
 
+    const handleForward = async (item) => {
+        try {
+            const dto = {
+                ...item,
+                actionBy: empId
+            }
+
+            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            if (!confirm) {
+                return;
+            }
+            const response = await forwardRequisition(dto);
+            if (response && response.success) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: response.message,
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
+                fetchRequisitions();
+            } else {
+                Swal.fire("Warning", response.message, "warning");
+            }
+        } catch (error) {
+            Swal.fire("Warning", handleApiError(error), "warning");
+        }
+    };
+
+    const freeSteps = ["Created by user", "Verified by DH (SA-HRT)", "Approved by AD-HRT"];
+    const paidSteps = ["Created by user", "Verified by DH (SA-HRT)", "Checked by AD-HRT", "Recommended by Director", " Approved by DFA"];
 
     return (
         <div>
@@ -137,8 +218,67 @@ const Requisition = () => {
                 </button>
             </div>
 
+            <div className="container-fluid mt-4">
+                <div className="row g-4">
+                    <div className="col-md-5">
+                        <Stepper
+                            title="Free Approval Flow"
+                            steps={freeSteps}
+                            currentStep={3}
+                        />
+                    </div>
+
+                    <div className="col-md-7">
+                        <Stepper
+                            title="Paid Approval Flow"
+                            steps={paidSteps}
+                            currentStep={5}
+                        />
+                    </div>
+                </div>
+            </div>
+
         </div>
     )
 }
 
 export default Requisition;
+
+const Stepper = ({ title, steps, currentStep }) => {
+    return (
+        <div className="card approval-card p-3 h-100">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="mb-0 approval-title">{title}</h6>
+                <span className="badge bg-light text-dark small">
+                    Step {currentStep}/{steps.length}
+                </span>
+            </div>
+
+            <div className="d-flex justify-content-between position-relative approval-wrapper">
+                {steps.map((step, index) => {
+                    const stepNumber = index + 1;
+                    const isActive = stepNumber <= currentStep;
+
+                    return (
+                        <div key={index} className="text-center flex-fill position-relative">
+                            <div
+                                className={`approval-step-sm mx-auto ${isActive ? "active-step-sm" : ""
+                                    }`}
+                            >
+                                {stepNumber}
+                            </div>
+                            <div className="step-label">{step}</div>
+                        </div>
+                    );
+                })}
+
+                <div
+                    className="approval-progress-sm"
+                    style={{
+                        width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+                    }}
+                />
+            </div>
+        </div>
+    );
+};

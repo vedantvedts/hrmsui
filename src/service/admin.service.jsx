@@ -121,3 +121,32 @@ export const updateFormRoleAccess = async (formRoleAccessId, isActive, forView, 
     throw error;
   }
 };
+
+
+export const getNotifiCount = async () => {
+  try {
+    return (await axios.get(`${API_URL}api/admin/notification-count`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+  } catch (error) {
+    console.error('Error occurred in getNotifiCount:', error);
+    throw error;
+  }
+};
+
+
+export const getNotifiList = async () => {
+  try {
+    return (await axios.get(`${API_URL}api/admin/notification-list`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+  } catch (error) {
+    console.error('Error occurred in getNotifiList:', error);
+    throw error;
+  }
+};
+
+export const updateNotification = async (notificationId) => {
+  try {
+    return (await axios.put(`${API_URL}api/admin/update-notification`, {}, { params: { notificationId }, headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+  } catch (error) {
+    console.error('Error occurred in updateNotification:', error);
+    throw error;
+  }
+}

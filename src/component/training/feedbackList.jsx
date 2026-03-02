@@ -74,7 +74,8 @@ const FeedbackList = () => {
         const payload = {
             ...item,
             participantName: namePart,
-            designationPart: designationPart
+            designationPart: designationPart,
+            employeeName: fullName
         }
         FeedbackPrint(payload);
     };

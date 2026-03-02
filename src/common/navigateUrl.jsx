@@ -17,6 +17,8 @@ import SignAuthority from "../component/master/signAuthority";
 import config from "../environment/config.js"
 import { useState } from 'react';
 import { setLocalStorageData } from "../service/auth.service.jsx";
+import RequisitionApproval from "../component/training/requisitionApproval.jsx";
+import Transaction from "../component/transaction/transaction.jsx";
 
 function AppRoutes() {
 
@@ -121,7 +123,9 @@ function AppRoutes() {
         <Route path="/feedback-add" element={<Feedback />} />
         <Route path="/feedback" element={<FeedbackList />} />
         <Route path="/req-add-edit" element={<AddEditRequisition />} />
+        <Route path="/req-approval" element={<RequisitionApproval />} />
         <Route path="/sign-authority" element={<SignAuthority />} />
+        <Route path="/transaction" element={<Transaction />} />
       </Routes>
 
     </>

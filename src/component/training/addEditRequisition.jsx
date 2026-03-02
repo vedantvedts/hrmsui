@@ -358,7 +358,13 @@ const AddEditRequisition = () => {
             }
             const response = requisitionId ? await updateRequisitionData(dto) : await addRequisitionData(dto);
             if (response && response.success) {
-                Swal.fire("Success", response.message, "success");
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: response.message,
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
                 resetForm();
                 navigate("/requisition");
             } else {
@@ -475,17 +481,17 @@ const AddEditRequisition = () => {
 
                                     <div className="col-md-3">
                                         <label className="form-label">Venue</label>
-                                        <Field name="venue" type="text" className="form-control" disabled/>
+                                        <Field name="venue" type="text" className="form-control" disabled />
                                         <ErrorMessage name="venue" component="div" className="invalid-msg" />
                                     </div>
 
                                     <div className="col-md-3">
                                         <label className="form-label">Registration Fee (₹)</label>
-                                        <Field name="registrationFee" type="number" className="form-control" disabled/>
+                                        <Field name="registrationFee" type="number" className="form-control" disabled />
                                         <ErrorMessage name="registrationFee" component="div" className="invalid-msg" />
                                     </div>
 
-                                     <div className="col-md-3">
+                                    <div className="col-md-3">
                                         <label className="form-label">Payment Mode</label>
                                         <Field name="modeOfPayment" type="text" className="form-control" />
                                         <ErrorMessage name="modeOfPayment" component="div" className="invalid-msg" />
