@@ -270,3 +270,30 @@ export const getReqTransactionList = async (reqId) => {
         throw error;
     }
 };
+
+export const addEvaluation = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/add-evaluation`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in addEvaluation():', error);
+        throw error;
+    }
+};
+
+export const getEvaluationList = async () => {
+    try {
+        return (await axios.get(`${API_URL}api/training/evaluation`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getEvaluationList():', error);
+        throw error;
+    }
+};
+
+export const getEvaluationPrint = async (id) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/evaluation-print/${id}`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getEvaluationPrint():', error);
+        throw error;
+    }
+};

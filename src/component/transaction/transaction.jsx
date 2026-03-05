@@ -85,7 +85,7 @@ const Transaction = () => {
 
                     <div className="transaction-title">
                         <h5>
-                            Transaction Details for <strong>{reqData?.programName || "N/A"}</strong>
+                            Transaction Details for <strong>{reqData?.requisitionNumber || "N/A"}</strong>
                         </h5>
 
                         {reqData?.fromDate && reqData?.toDate && (

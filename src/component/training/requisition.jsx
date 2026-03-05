@@ -43,13 +43,13 @@ const Requisition = () => {
             setFeedbackList(response?.data || []);
         } catch (error) {
             console.error("Error fetching requisitions:", error);
-            Swal.fire("Error", "Failed to fetch requisition data. Please try again later.", "error");
         }
     };
 
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-        { name: "Program", selector: (row) => row.programName, sortable: true, align: 'text-center' },
+        { name: "Requisition No", selector: (row) => row.requisitionNumber, sortable: true, align: 'text-left' },
+        { name: "Program", selector: (row) => row.programName, sortable: true, align: 'text-left' },
         { name: "Organizer", selector: (row) => row.organizer, sortable: true, align: 'text-center' },
         { name: "Duration", selector: (row) => row.duration, sortable: true, align: 'text-center' },
         { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: 'text-center' },
@@ -69,6 +69,7 @@ const Requisition = () => {
 
             return {
                 sn: index + 1,
+                requisitionNumber: item.requisitionNumber || "",
                 programName: item.programName || "-",
                 organizer: item.organizer || "-",
                 duration: item.duration || "-",
@@ -136,6 +137,7 @@ const Requisition = () => {
     const handleView = (item) => {
         const dto = {
             requisitionId : item.requisitionId,
+            requisitionNumber : item.requisitionNumber,
             programName : item.programName,
             fromDate : item.fromDate,
             toDate : item.toDate

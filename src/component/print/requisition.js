@@ -71,12 +71,14 @@ export const RequisitionPrint = (reqData) => {
             {
                 margin: [0, 0, 0, 0],
                 table: {
-                    widths: [120, 385],
+                    widths: [100, 140, 100, 150],
                     body: [
                         [
-                            { text: "Division / Group", bold: true, },
-                            { text: reqData.empDivCode || "", alignment: 'left' }
-                        ],
+                            { text: "Division / Group", bold: true },
+                            { text: reqData.empDivCode || "", alignment: 'left' },
+                            { text: "Requisition No", bold: true },
+                            { text: reqData.requisitionNumber || "", alignment: 'left' }
+                        ]
                     ]
                 }
             },
