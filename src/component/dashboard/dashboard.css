@@ -24,57 +24,62 @@
     color: #34495e;
 }
 
-/* CARD */
-
 .dashboard-card {
-    border-radius: 14px;
+    border-radius: 16px;
     border: none;
-    background: #d4e6fb;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
+    background: linear-gradient(135deg, #6ea8fe, #4e73df);
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .12);
     transition: all .35s ease;
     height: 100%;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
 }
 
 .dashboard-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, .15);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 18px 35px rgba(0, 0, 0, .18);
 }
 
-/* COURSE CARD */
 
 .dashboard-icon {
-    font-size: 30px;
-    color: #4e73df;
-    margin-bottom: 8px;
+    color: #f49200;
+    font-size: 24px;
+    width: 55px;
+    height: 55px;
+    margin: auto;
+    margin-top: 10px;
+    border-radius: 50%;
+    background: rgb(255 255 255);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
 }
 
 .dashboard-label {
-    font-weight: 600;
-    color: #6c757d;
+    font-weight: 500;
+    font-size: 15px;
+    opacity: .9;
 }
 
 .dashboard-count {
-    font-size: 36px;
+    font-size: 38px;
     font-weight: 700;
-    color: #2c3e50;
-    margin: 5px 0;
+    margin: 6px 0;
 }
 
 .dashboard-subtext {
     font-size: 13px;
-    color: #999;
+    opacity: .8;
 }
-
-/* REQUISITION CARD */
 
 .organizer-title {
     font-weight: 700;
     margin-bottom: 15px;
     color: #2c3e50;
 }
-
-/* GRID */
-/* TABLE WRAPPER */
 
 .requisition-table-wrapper {
     background: #ffffff;
@@ -83,14 +88,10 @@
     overflow: hidden;
 }
 
-/* TABLE */
-
 .requisition-table {
     margin: 0;
     font-size: 14px;
 }
-
-/* HEADER */
 
 .requisition-table thead {
     background: linear-gradient(90deg, #4e73df, #224abe);
@@ -103,8 +104,6 @@
     border: none;
 }
 
-/* ROW */
-
 .requisition-table td {
     padding: 14px;
     vertical-align: middle;
@@ -116,8 +115,6 @@
     color: #2c3e50;
 }
 
-/* HOVER */
-
 .requisition-table tbody tr {
     transition: all .25s ease;
 }
@@ -127,16 +124,12 @@
     transform: scale(1.01);
 }
 
-/* BADGES */
-
 .badge {
     padding: 7px 12px;
     font-size: 13px;
     border-radius: 8px;
     font-weight: 600;
 }
-
-/* COLORS */
 
 .badge-total {
     background: #eef2ff;
@@ -163,8 +156,6 @@
     color: #198754;
 }
 
-/* ROW ANIMATION */
-
 .table-row-animate {
     animation: rowFade .5s ease forwards;
     opacity: 0;
@@ -184,8 +175,6 @@
 
 }
 
-/* No Data Container */
-
 .no-data-container {
     width: 100%;
     padding: 40px;
@@ -201,8 +190,6 @@
     animation: floatIcon 2s ease-in-out infinite;
 }
 
-/* Floating Animation */
-
 @keyframes floatIcon {
     0% {
         transform: translateY(0)
@@ -216,8 +203,6 @@
         transform: translateY(0)
     }
 }
-
-/* Fade In */
 
 @keyframes fadeIn {
     from {

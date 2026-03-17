@@ -27,6 +27,7 @@ const AddEditRequisition = () => {
     const [showEligibleModal, setShowEligibleModal] = useState(false);
     const [newEligibilityId, setNewEligibilityId] = useState(null);
     const [newProgramId, setNewProgramId] = useState(null);
+
     const formikRef = useRef(null);
     const courseFormikRef = useRef(null);
 
@@ -37,7 +38,8 @@ const AddEditRequisition = () => {
     const designationCode = localStorage.getItem("designationCode");
 
     const [existingFiles, setExistingFiles] = useState({});
-
+    const [feeOptions, setFeeOptions] = useState([]);
+    const [reqNo, setReqNo] = useState(null);
 
     const [initialValues, setInitialValues] = useState({
         courseId: "",
@@ -111,7 +113,7 @@ const AddEditRequisition = () => {
                     toDate: data.toDate ? new Date(data.toDate) : null,
                     duration: data.duration || "",
                     venue: data.venue || "",
-                    offlineRegistrationFee: data.offlineRegistrationFee || "0",
+                    offlineRegistrationFee: data.registrationFee || "0",
                     reference: data.reference || "",
                     organizedBy: data.organizer || "",
                     modeOfPayment: data.modeOfPayment || "ECS",
@@ -124,6 +126,21 @@ const AddEditRequisition = () => {
                     multipartFilePan: null,
                     multipartFileBrochure: null,
                 });
+                const fees = [];
+                if (data.offlineRegistrationFee > 0) {
+                    fees.push({
+                        value: data.offlineRegistrationFee,
+                        label: `Offline - ₹${data.offlineRegistrationFee}`,
+                    });
+                }
+                if (data.onlineRegistrationFee > 0) {
+                    fees.push({
+                        value: data.onlineRegistrationFee,
+                        label: `Online - ₹${data.onlineRegistrationFee}`,
+                    });
+                }
+                setFeeOptions(fees);
+                setReqNo(data.requisitionNumber);
                 setExistingFiles({
                     multipartFileEcs: data.fileEcs ? { name: data.fileEcs } : null,
                     multipartFileCheque: data.fileCheque ? { name: data.fileCheque } : null,
@@ -245,6 +262,21 @@ const AddEditRequisition = () => {
         setShowEligibleModal(false);
     };
 
+    useEffect(() => {
+        if (newEligibilityId && eligibilityList.length > 0 && formikRef.current) {
+            const selectedEligible = eligibilityList.find(
+                item => item.eligibilityId === newEligibilityId
+            );
+            if (selectedEligible) {
+                handleChangeEligibility({
+                    value: selectedEligible.eligibilityId,
+                    label: selectedEligible.eligibilityName,
+                });
+                setNewEligibilityId(null);
+            }
+        }
+    }, [eligibilityList, newEligibilityId]);
+
     const SUPPORTED_FORMATS = [
         "application/pdf",
         "image/jpg",
@@ -283,7 +315,10 @@ const AddEditRequisition = () => {
             .min(Yup.ref("fromDate"), "To Date must be after From Date"),
         organizedBy: Yup.string().trim().required("Organized By is required"),
         venue: Yup.string().trim().required("Venue is required").nullable(),
-        offlineRegistrationFee: Yup.number().typeError("Registration Fee must be a number").min(0, "Registration Fee cannot be negative").nullable(),
+        offlineRegistrationFee: Yup.number()
+            .typeError("Registration Fee must be a number")
+            .min(0, "Registration Fee cannot be negative")
+            .required("Registration Fee is required"),
         modeOfPayment: Yup.string().trim().required("Payment Mode is required"),
         initiatingOfficer: Yup.string().required("Initiating Officer is required"),
         necessity: Yup.string().trim().required("Necessity of course is required"),
@@ -413,7 +448,6 @@ const AddEditRequisition = () => {
         }
 
         const programData = selected.data;
-
         if (!programData) return;
 
         const newOrgData = agencyList.find(
@@ -429,9 +463,25 @@ const AddEditRequisition = () => {
         setFieldValue("organizedBy", newOrgData ? newOrgData.organizer : "");
         setFieldValue("venue", programData ? programData.venue : "");
         setFieldValue("offlineRegistrationFee", programData ? programData.offlineRegistrationFee : 0);
+        setFieldValue("onlineRegistrationFee", programData ? programData.onlineRegistrationFee : 0);
         setFieldValue("reference", newOrgData ? `${newOrgData.organizer} - Calendar` : "");
 
         calculateDuration(fromDate, toDate, setFieldValue);
+
+        const fees = [];
+        if (programData.offlineRegistrationFee > 0) {
+            fees.push({
+                value: programData.offlineRegistrationFee,
+                label: `Offline - ₹${programData.offlineRegistrationFee}`,
+            });
+        }
+        if (programData.onlineRegistrationFee > 0) {
+            fees.push({
+                value: programData.onlineRegistrationFee,
+                label: `Online - ₹${programData.onlineRegistrationFee}`,
+            });
+        }
+        setFeeOptions(fees);
     };
 
     const calculateDuration = (fromDate, toDate, setFieldValue) => {
@@ -451,6 +501,7 @@ const AddEditRequisition = () => {
         try {
             const dto = {
                 ...values,
+                registrationFee: values.offlineRegistrationFee,
                 fromDate: format(new Date(values.fromDate), "yyyy-MM-dd"),
                 toDate: format(new Date(values.toDate), "yyyy-MM-dd"),
                 requisitionId: requisitionId || null,
@@ -495,7 +546,23 @@ const AddEditRequisition = () => {
             </h3>
 
             <div className="p-5">
-                <div className="text-start mb-1 me-2 text-primary fw-semibold">Participant : {formatName()}</div>
+                <div className="d-flex justify-content-between align-items-center p-2 mb-2 bg-light rounded-3 shadow-sm">
+                    <div className="d-flex align-items-center">
+                        <span className="badge rounded-pill bg-primary-subtle text-primary me-2 px-3 py-2">
+                            <i className="bi bi-person-fill me-1"></i> Participant
+                        </span>
+                        <span className="fw-bold text-dark">{formatName()}</span>
+                    </div>
+
+                    {reqNo && (
+                        <div className="d-flex align-items-center">
+                            <span className="badge rounded-pill bg-success-subtle text-success me-2 px-3 py-2">
+                                Requisition No
+                            </span>
+                            <span className="font-monospace fw-bold text-muted">{reqNo}</span>
+                        </div>
+                    )}
+                </div>
                 <div className="card p-3 shadow-sm border-rounded">
                     <Formik
                         innerRef={formikRef}
@@ -592,7 +659,38 @@ const AddEditRequisition = () => {
 
                                     <div className="col-md-3">
                                         <label className="form-label">Registration Fee (₹)</label>
-                                        <Field name="offlineRegistrationFee" type="number" className="form-control" disabled />
+
+                                        {values.offlineRegistrationFee === 0 ? (
+
+                                            <Field
+                                                name="offlineRegistrationFee"
+                                                type="number"
+                                                className="form-control"
+                                                disabled
+                                            />
+
+                                        ) : feeOptions.length > 1 ? (
+
+                                            <Select
+                                                options={feeOptions}
+                                                value={feeOptions.find(fee => fee.value === values.offlineRegistrationFee) || null}
+                                                placeholder="Select Fee Type"
+                                                onChange={(selected) => {
+                                                    setFieldValue("offlineRegistrationFee", selected ? selected.value : 0);
+                                                }}
+                                            />
+
+                                        ) : (
+
+                                            <Field
+                                                name="offlineRegistrationFee"
+                                                type="number"
+                                                className="form-control"
+                                                disabled
+                                            />
+
+                                        )}
+
                                         <ErrorMessage name="offlineRegistrationFee" component="div" className="invalid-msg" />
                                     </div>
 

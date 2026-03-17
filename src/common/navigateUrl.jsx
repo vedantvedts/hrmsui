@@ -22,6 +22,7 @@ import { setLocalStorageData } from "../service/auth.service.jsx";
 import RequisitionApproval from "../component/training/requisitionApproval.jsx";
 import Transaction from "../component/transaction/transaction.jsx";
 import Evaluation from "../component/training/evaluation.jsx";
+import Eligibility from "../component/master/eligibility.jsx";
 
 function AppRoutes() {
 
@@ -127,6 +128,7 @@ function AppRoutes() {
         <Route path="/sign-authority" element={<SignAuthority />} />
         <Route path="/transaction" element={<Transaction />} />
         <Route path="/evaluation" element={<Evaluation />} />
+        <Route path="/eligibility" element={<Eligibility />} />
       </Routes>
 
     </>

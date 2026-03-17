@@ -382,3 +382,12 @@ export const addEligible = async (data) => {
         throw error;
     }
 };
+
+export const updateEligible = async (data) => {
+    try {
+        return (await axios.put(`${API_URL}api/training/update-eligible`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in updateEligible():', error);
+        throw error;
+    }
+};

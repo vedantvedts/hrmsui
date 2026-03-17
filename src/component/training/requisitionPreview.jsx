@@ -90,7 +90,7 @@ const RequisitionPreview = ({ reqData, setShowModal }) => {
                                     <div className="col-md-3 view-field">
                                         <span className="view-label">Registration Fee</span>
                                         <div className="view-value">
-                                            {reqData.offlineRegistrationFee > 0 ? `₹ ${reqData.offlineRegistrationFee}` : "Free"}
+                                            {reqData.registrationFee > 0 ? `₹ ${reqData.registrationFee}` : "Free"}
                                         </div>
                                     </div>
 

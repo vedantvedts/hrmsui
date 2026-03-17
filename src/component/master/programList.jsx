@@ -14,11 +14,16 @@ import { handleApiError } from "../../service/master.service";
 import { FaEdit } from "react-icons/fa";
 import { useRef } from "react";
 import { usePermission } from "../../common/usePermission";
+import { useLocation, useNavigate } from "react-router-dom";
 
 
 const ProgramList = () => {
 
     const { canView, canAdd, canEdit, canDelete } = usePermission("Course");
+
+    const navigate = useNavigate();
+    const location = useLocation();
+    const stateOrgId = location?.state;
 
     const [filterOrganizeList, setFilterOrganizeList] = useState([]);
     const [eligibilityList, setEligibilityList] = useState([]);
@@ -28,7 +33,7 @@ const ProgramList = () => {
     const [editMode, setEditMode] = useState(false);
     const formikRef = useRef(null);
     const [newEligibilityId, setNewEligibilityId] = useState(null);
-    const [selectedOrgId, setselectedOrgId] = useState(0);
+    const [selectedOrgId, setSelectedOrgId] = useState(stateOrgId ?? 0);
 
     const programFeilds = {
         courseCode: "",
@@ -51,8 +56,21 @@ const ProgramList = () => {
     }, []);
 
     useEffect(() => {
+
+        if (stateOrgId) {
+            setSelectedOrgId(stateOrgId);
+            navigate(location.pathname, { replace: true, state: null });
+        }
+
+    }, []);
+
+    useEffect(() => {
         if (selectedOrgId !== null && selectedOrgId !== undefined) {
             fetchCourseData(selectedOrgId);
+            setInitialValues((prev) => ({
+                ...prev,
+                organizerId: selectedOrgId || ""
+            }));
         }
     }, [selectedOrgId]);
 
@@ -171,11 +189,6 @@ const ProgramList = () => {
         venue: Yup.string().trim().required("Venue is required"),
     });
 
-    const agencyOptions = agencyList.map(data => ({
-        value: data?.organizerId,
-        label: data?.organizer
-    }));
-
     const eligibilityOptions = [
         { value: 0, label: "Add New" },
         ...eligibilityList.map((item) => ({
@@ -192,8 +205,10 @@ const ProgramList = () => {
         }))
     ];
 
+    const agencyOptions = organizerOptions.slice(1);
+
     const handleChangeOrganizer = (orgId) => {
-        setselectedOrgId(orgId);
+        setSelectedOrgId(orgId);
     };
 
 
@@ -364,6 +379,7 @@ const ProgramList = () => {
                                         initialValues={initialValues}
                                         validationSchema={programSchema}
                                         onSubmit={handleProgramSubmit}
+                                        enableReinitialize
                                     >
                                         {({ setFieldValue, values }) => (
                                             <Form autoComplete="off">

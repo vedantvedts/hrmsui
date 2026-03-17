@@ -70,13 +70,7 @@ const Navbar = () => {
                 setNotifiCount(notifiCount);
                 setNotifiList(notifiList);
                 const url = item.notificationUrl;
-                const arr = url.split("/");
-                if (arr.length > 1) {
-                    const selectedLaoId = Number(arr[1]);
-                    navigate(`/${arr[0]}`, { state: { selectedLaoId } })
-                } else {
-                    navigate(`/${url}`);
-                }
+                navigate(`/${url}`);
             }
         } catch (error) {
             console.error("Error updating notification:", error);

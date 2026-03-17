@@ -141,7 +141,7 @@ export const RequisitionPrint = (reqData) => {
                                         [
                                             {
                                                 text: (() => {
-                                                    const fee = Number(reqData?.offlineRegistrationFee) || 0;
+                                                    const fee = Number(reqData?.registrationFee) || 0;
                                                     return fee > 0 ? `₹ ${fee.toFixed(2)}` : "Free";
                                                 })(),
                                                 bold: true,
