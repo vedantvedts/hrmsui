@@ -1,0 +1,264 @@
+:root {
+    /* Corporate Blue Palette */
+    --dt-primary: #004593;
+    --dt-secondary: #0163d6;
+    --dt-accent: #73b5f9;
+    --dt-hover: #e3f2fd;
+    --dt-zebra: #f8fbff;
+    --dt-border: #dee2e6;
+    --dt-text-main: #333333;
+    --dt-text-white: #ffffff;
+    
+    /* Shadows & Transitions */
+    --dt-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --dt-transition: all 0.2s ease-in-out;
+}
+
+/* 1. CONTAINER & WRAPPER */
+.datatableContainer {
+    width: 100%;
+    max-height: 70vh;
+    overflow: auto;
+    border: 1px solid var(--dt-border);
+    border-radius: 8px;
+    background: var(--dt-text-white);
+    box-shadow: var(--dt-shadow);
+    position: relative;
+    padding: 0rem;
+}
+
+/* 2. CORE TABLE STYLES */
+.table {
+    width: 100%;
+    margin-bottom: 0;
+    /* Essential for sticky header borders to work */
+    border-collapse: collapse; 
+    border-spacing: 0;
+}
+
+/* 3. STICKY HEADER */
+.table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--dt-primary) !important;
+    color: var(--dt-text-white);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 10px !important;
+    border-bottom: 2px solid var(--dt-secondary);
+    white-space: nowrap;
+    text-align: center;
+}
+
+/* 4. BODY & ROW STYLES */
+.table tbody td {
+    padding: 10px 8px !important;
+    font-size: 0.9rem;
+    color: var(--dt-text-main);
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    line-height: 1.5;
+    transition: var(--dt-transition);
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: var(--dt-zebra);
+}
+
+.table tbody tr:hover {
+    background-color: var(--dt-hover) !important;
+}
+
+/* Highlighting Logic */
+.table tbody tr.highlightRow {
+    background-color: #6edbaa !important;
+    font-weight: 500;
+}
+
+/* 5. NESTED / INNER TABLES */
+.innerTableWidth {
+    margin: 10px 3% !important;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--dt-border);
+}
+
+.innerSubTableTh {
+    background-color: #4d4dff !important;
+    color: var(--dt-text-white);
+    font-weight: bold;
+    text-align: center;
+    padding: 8px !important;
+}
+
+/* 6. INTERACTIVE ELEMENTS (Sort & Search) */
+.sortableColumn {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.sortIcon {
+    display: inline-block;
+    width: 0; height: 0;
+    margin-left: 8px;
+    vertical-align: middle;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid rgba(255,255,255,0.6);
+    transition: var(--dt-transition);
+}
+
+.sortableColumn:hover .sortIcon {
+    border-top-color: rgba(255,255,255,1);
+}
+
+.sortIcon.asc {
+    border-top: none;
+    border-bottom: 5px solid var(--dt-text-white);
+}
+
+.searchBar {
+    width: 240px;
+    border-radius: 6px;
+}
+
+/* 7. CUSTOM SCROLLBARS */
+.datatableContainer::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.datatableContainer::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.datatableContainer::-webkit-scrollbar-thumb {
+    background: var(--dt-accent);
+    border-radius: 10px;
+    border: 2px solid #f8f9fa;
+}
+
+.datatableContainer::-webkit-scrollbar-thumb:hover {
+    background: var(--dt-secondary);
+}
+
+.dropdownMenu{
+    background: var(--dt-text-white) !important;
+    border: 1px solid var(--dt-border) !important;
+    box-shadow: var(--dt-shadow) !important;
+    border-radius: 6px !important;
+    transition: var(--dt-transition) !important;
+    min-width: 230px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+/* 8. UI HELPERS */
+.gap2 { gap: 0.75rem !important; }
+
+.btnActivePageNo {
+    background-color: var(--dt-primary) !important;
+    color: white !important;
+    border: none;
+    box-shadow: 0 2px 4px rgba(13, 71, 161, 0.2);
+}
+
+.dataTableBorderedRow {
+    border: 1px solid #ccc;
+}
+
+.highlightRow {
+  background-color: #6edbaa !important;
+  /* font-weight: bold; */
+}
+
+.exportWrapper {
+    display: flex;
+    align-items: center;
+    background: #fdfdfd;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid #eef0f2;
+}
+
+.exportLabel {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #727780;
+    letter-spacing: 0.05em;
+    margin-right: 10px;
+}
+
+.premiumBtnGroup {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.exportBtn {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    padding: 5px 12px !important;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease !important;
+}
+
+.exportBtn:hover {
+    background: #f8fafc !important;
+    color: var(--dt-primary) !important;
+    border-color: var(--dt-accent) !important;
+    z-index: 2; /* Ensures border highlight shows over neighboring buttons */
+}
+
+/* Subtle brand accents on hover icons */
+.excelBtn svg { color: #16a34a; }
+.pdfBtn svg { color: #dc2626; }
+.csvBtn svg { color: #0f172a; }
+
+.exportBtn:active {
+    background: #f1f5f9 !important;
+    transform: translateY(1px);
+}
+
+/* Remove double borders in the group */
+.exportBtn:not(:first-child) {
+    margin-left: -1px !important;
+}
+
+.exportIcon {
+    margin-right: 6px;
+    color: #475569;
+    transition: color 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.tableFooter {
+    border-top: 2px solid var(--dt-secondary);
+}
+
+.tableFooter tr td {
+    padding: 12px 15px !important;
+    font-size: 0.85rem;
+    border-bottom: none !important;
+    background-color: #ffffff;
+}
+
+/* Specific styling for summary rows */
+.tableFooter :global(.footer-summary-row) td {
+    background-color: #f8fbff !important; /* Muted corporate blue tint */
+    border-top: 1px solid var(--dt-border) !important;
+    color: var(--dt-primary);
+}
+
+.tableFooter :global(.footer-meta-row) td {
+    background-color: #ffffff !important;
+    padding-top: 20px !important; /* Space for signature */
+    border-top: none !important;
+}

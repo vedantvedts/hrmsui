@@ -39,3 +39,14 @@ export const getRequisitionUserDashboardCount = async (empId, startDate, endDate
         throw error;
     }
 };
+
+export const getReportData = async (url) => {
+    try {
+        return (await axios.get(`${API_URL}api/reports/${url}`, {
+            headers: { 'Content-Type': 'application/json', ...authHeader() }
+        })).data;
+    } catch (error) {
+        console.error('Error occurred in getReportData():', error);
+        throw error;
+    }
+};

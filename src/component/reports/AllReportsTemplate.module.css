@@ -1,0 +1,222 @@
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f0f2f5;
+  /* Very light grey for background contrast */
+}
+
+.mainLayout {
+  display: flex;
+  flex: 1;
+}
+
+/* Sidebar Styling - Premium Enterprise Theme */
+.sidebar {
+  width: 420px;
+  height: 100vh;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  color: #333;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.08);
+  border-right: 1px solid #e9ecef;
+  overflow-y: auto;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebarTitle {
+  padding: 20px 15px 10px;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 10px;
+}
+
+.sidebarTitle h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #495057;
+  letter-spacing: -0.5px;
+}
+
+.sidebarHeader {
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Search Bar - Using #73b5f9 for the input background */
+.searchWrapper {
+  position: relative;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  opacity: 0.8;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 8px 8px 32px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  background: white;
+  color: #333;
+  font-size: 14px;
+}
+
+.searchInput:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #999;
+}
+
+.toggleBtn {
+  background: transparent;
+  border: none;
+  color: #333;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggleBtn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+/* List Items */
+.reportList {
+  list-style: none;
+  padding: 15px 10px;
+  margin: 0;
+  overflow-y: auto;
+}
+
+/* Custom Scrollbar for the sidebar */
+.reportList::-webkit-scrollbar {
+  width: 5px;
+}
+
+.reportList::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.reportItem {
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #495057;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.reportItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.reportItem:hover {
+  background: linear-gradient(94deg, #298bf1 0%, #0b66c8 100%);;
+  color: white;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  border-color: #dee2e6;
+}
+
+.reportItem:hover::before {
+  background: #6c757d;
+}
+
+.active {
+  background: linear-gradient(94deg, #501fc0 0%, #0056b3 100%);
+  color: white !important;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+  transform: translateY(-3px) scale(1.02);
+  border-color: #007bff;
+}
+
+.active:hover {
+  background: linear-gradient(94deg, #a07d00 0%, #0056b3 100%);
+  color: white !important;
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+  transform: translateY(-3px) scale(1.02);
+}
+
+.active::before {
+  background: #ffffff;
+}
+
+.icon {
+  font-size: 20px;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  /* color: #6c757d; */
+  transition: color 0.3s ease;
+}
+
+.active .icon {
+  color: #ffffff;
+}
+
+.label {
+  font-size: 15px;
+  text-align: left;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Content Area - White background */
+.content {
+  flex: 1;
+  background-color: white;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.tableCard {
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+}
+
+/* Adjusting Bootstrap Table Header to match your theme */
+.content :global(.table-light) {
+  background-color: #f8f9fa;
+  color: #0163d6;
+}

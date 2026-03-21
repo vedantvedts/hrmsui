@@ -236,6 +236,7 @@ const AddEditRequisition = () => {
             setShowAddEligibility(true);
             setEligibilityInput("");
             setEligibilityError("");
+            setFieldValue("eligibilityId", null);
             return;
         }
 
@@ -760,6 +761,26 @@ const AddEditRequisition = () => {
                                         />
                                         <ErrorMessage name="initiatingOfficer" component="div" className="invalid-msg" />
                                     </div> */}
+{/* 
+                                    {values.offlineRegistrationFee > 30000 &&
+                                        <>
+                                            <div className="col-md-4 mt-4">
+                                                <label className="form-label">Whether the present theme has been reflected in the annual training calendar</label>
+                                                <Field name="presentTheme" type="text" className="form-control" />
+                                                <ErrorMessage name="presentTheme" component="div" className="invalid-msg" />
+                                            </div>
+                                            <div className="col-md-5 mt-4">
+                                                <label className="form-label">List the application of benefits w.r.t individuals assignments</label>
+                                                <Field name="application" as="textarea" className="form-control" />
+                                                <ErrorMessage name="application" component="div" className="invalid-msg" />
+                                            </div>
+                                            <div className="col-md-3 mt-4">
+                                                <label className="form-label">Present area of responsibility and role</label>
+                                                <Field name="responsibility" type="text" className="form-control" />
+                                                <ErrorMessage name="responsibility" component="div" className="invalid-msg" />
+                                            </div>
+                                        </>
+                                    } */}
 
                                     <div className="col-md-8 mt-4">
                                         <span className="form-label me-3">

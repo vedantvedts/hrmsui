@@ -265,6 +265,7 @@ const ProgramList = () => {
             setShowAddEligibility(true);
             setEligibilityInput("");
             setEligibilityError("");
+            setFieldValue("eligibilityId", null);
             return;
         }
 
@@ -293,7 +294,7 @@ const ProgramList = () => {
                 fetchEligibility();
                 formikRef.current.setFieldValue("eligibilityId", newItem.eligibilityId);
                 setShowAddEligibility(false);
-                setEligibilityInput("");    
+                setEligibilityInput("");
             } else {
                 Swal.fire("Warning", response.message, "warning");
             }
