@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Datatable from "../../datatable/Datatable";
-import { format } from "date-fns";
+import { addYears, format, startOfYear } from "date-fns";
 import Navbar from "../navbar/Navbar";
 import { ErrorMessage, Form, Formik } from "formik";
 import DatePicker from "react-datepicker";
@@ -10,8 +10,12 @@ import Swal from "sweetalert2";
 import { getEmployees, getSignAuthorityList, getSignAuthorityRoles, handleApiError, insertSignRoleAuthority, updateSignRoleAuthority } from "../../service/master.service";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
 import { FaEdit } from "react-icons/fa";
+import { usePermission } from "../../common/usePermission";
+import { Tooltip } from "react-tooltip";
 
 const SignAuthority = () => {
+
+    const { canView, canAdd, canEdit, canDelete } = usePermission("Sign Authority");
 
     const [signAuthorityList, setSignAuthorityList] = useState([]);
     const [employeeList, setEmployeeList] = useState([]);
@@ -20,6 +24,9 @@ const SignAuthority = () => {
     const empId = localStorage.getItem("empId");
     const [showModal, setShowModal] = useState(false);
     const [editdata, setEditData] = useState(null);
+
+    const validFromDefault = startOfYear(new Date());
+    const validUptoDefault = addYears(validFromDefault, 5);
 
     useEffect(() => {
         fetchSignAuthorityList();
@@ -77,8 +84,8 @@ const SignAuthority = () => {
         empId: "",
         signAuthRoleId: "",
         divisionId: "",
-        validFrom: "",
-        validUpto: "",
+        validFrom: validFromDefault || null,
+        validUpto: validUptoDefault || null,
         serialNo: "",
     });
 
@@ -98,7 +105,7 @@ const SignAuthority = () => {
         { name: "Authority From", selector: (row) => row.validFrom, sortable: true, align: "text-center" },
         { name: "Authority To", selector: (row) => row.validTo, sortable: true, align: "text-center" },
         { name: "Period Status", selector: (row) => row.periodExpired, sortable: true, align: "text-center" },
-        { name: "Action", selector: (row) => row.action, sortable: false, align: "text-center" }
+        ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
     ];
 
     const mappedData = () => {
@@ -132,9 +139,13 @@ const SignAuthority = () => {
                 ),
                 action: (
                     <>
+                        <Tooltip id="Tooltip" className='text-white' />
                         <button
                             className="btn btn-sm btn-warning me-2"
                             onClick={() => handleEdit(item)}
+                            data-tooltip-id="Tooltip"
+                            data-tooltip-content="Edit"
+                            data-tooltip-place="top"
                         >
                             <FaEdit className="fs-6" />
                         </button>
@@ -152,8 +163,8 @@ const SignAuthority = () => {
             empId: "",
             signAuthRoleId: "",
             divisionId: "",
-            validFrom: "",
-            validUpto: "",
+            validFrom: validFromDefault || null,
+            validUpto: validUptoDefault || null,
             serialNo: "",
         });
     };
@@ -188,7 +199,13 @@ const SignAuthority = () => {
             }
             const response = editdata ? await updateSignRoleAuthority(payload) : await insertSignRoleAuthority(payload);
             if (response && response.success) {
-                Swal.fire("Success", response.message, "success");
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: response.message,
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
                 resetForm();
                 setShowModal(false);
                 fetchSignAuthorityList();
@@ -220,11 +237,13 @@ const SignAuthority = () => {
             </div>
 
             <div>
-                <button
-                    className="add"
-                    onClick={handleAdd}>
-                    ADD NEW
-                </button>
+                {canAdd &&
+                    <button
+                        className="add"
+                        onClick={handleAdd}>
+                        ADD NEW
+                    </button>
+                }
             </div>
 
             {showModal && (

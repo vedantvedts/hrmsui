@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Datatable from "../../datatable/Datatable";
 import Navbar from "../navbar/Navbar";
-import { addProgram, editProgram, getAgencies, getPrograms } from "../../service/training.service";
+import { addEligible, addProgram, editProgram, getAgencies, getCourseList, getEligibilities } from "../../service/training.service";
 import Swal from "sweetalert2";
 import { format } from "date-fns";
 import { Tooltip } from "react-tooltip";
@@ -12,64 +12,125 @@ import Select from "react-select";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
 import { handleApiError } from "../../service/master.service";
 import { FaEdit } from "react-icons/fa";
+import { useRef } from "react";
+import { usePermission } from "../../common/usePermission";
+import { useLocation, useNavigate } from "react-router-dom";
 
 
 const ProgramList = () => {
 
-    const [programList, setProgramList] = useState([]);
+    const { canView, canAdd, canEdit, canDelete } = usePermission("Course");
+
+    const navigate = useNavigate();
+    const location = useLocation();
+    const stateOrgId = location?.state;
+
+    const [filterOrganizeList, setFilterOrganizeList] = useState([]);
+    const [eligibilityList, setEligibilityList] = useState([]);
     const [showProgramModal, setShowProgramModal] = useState(false);
     const [agencyList, setAgencyList] = useState([]);
     const [editMode, setEditMode] = useState(false);
+    const formikRef = useRef(null);
+    const [selectedOrgId, setSelectedOrgId] = useState(stateOrgId ?? 0);
+    const [showAddEligibility, setShowAddEligibility] = useState(false);
+    const [eligibilityInput, setEligibilityInput] = useState("");
+    const [eligibilityError, setEligibilityError] = useState("");
 
     const programFeilds = {
-        programId: "",
-        programName: "",
+        courseCode: "",
+        courseId: "",
+        courseName: "",
         organizerId: "",
+        eligibilityId: null,
         fromDate: null,
         toDate: null,
-        registrationFee: null,
-        isRegistration: "N",
+        offlineRegistrationFee: 0,
+        onlineRegistrationFee: null,
         venue: "",
     };
 
     const [initialValues, setInitialValues] = useState(programFeilds);
 
     useEffect(() => {
-        fetchData();
+        fetchAgencies();
+        fetchEligibility();
     }, []);
 
-    const fetchData = async () => {
+    useEffect(() => {
+
+        if (stateOrgId) {
+            setSelectedOrgId(stateOrgId);
+            navigate(location.pathname, { replace: true, state: null });
+        }
+
+    }, []);
+
+    useEffect(() => {
+        if (selectedOrgId !== null && selectedOrgId !== undefined) {
+            fetchCourseData(selectedOrgId);
+            setInitialValues((prev) => ({
+                ...prev,
+                organizerId: selectedOrgId || ""
+            }));
+        }
+    }, [selectedOrgId]);
+
+    const fetchCourseData = async (orgId) => {
         try {
-            const response = await getPrograms();
-            const agencyResponse = await getAgencies();
-            setProgramList(response?.data || []);
-            setAgencyList(agencyResponse?.data || []);
+            const response = await getCourseList(orgId);
+            setFilterOrganizeList(response?.data || []);
         } catch (error) {
             console.error("Error fetching programs:", error);
             Swal.fire("Error", "Failed to fetch programs data. Please try again later.", "error");
         }
     };
 
+    const fetchAgencies = async () => {
+        try {
+            const response = await getAgencies();
+            setAgencyList(response?.data || []);
+        } catch (error) {
+            console.error("Error fetching agencies:", error);
+            Swal.fire("Error", "Failed to fetch agency data. Please try again later.", "error");
+        }
+    };
+
+    const fetchEligibility = async () => {
+        try {
+            const response = await getEligibilities();
+            setEligibilityList(response?.data || []);
+        } catch (error) {
+            console.error("Error fetching eligibility:", error);
+            Swal.fire("Error", "Failed to fetch eligibility data. Please try again later.", "error");
+        }
+    };
+
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-        { name: "Program", selector: (row) => row.programName, sortable: true, align: 'text-center' },
-        { name: "Organizer", selector: (row) => row.organizer, sortable: true, align: 'text-center' },
-        { name: "venue", selector: (row) => row.venue, sortable: true, align: 'text-center' },
+        { name: "Course Code", selector: (row) => row.courseCode, sortable: true, align: 'text-center' },
+        { name: "Course Name", selector: (row) => row.courseName, sortable: true, align: 'text-left' },
+        { name: "Organizer", selector: (row) => row.organizer, sortable: true, align: 'text-left' },
+        { name: "Venue", selector: (row) => row.venue, sortable: true, align: 'text-left' },
+        { name: "Eligibility", selector: (row) => row.eligibility, sortable: true, align: 'text-left' },
         { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: 'text-center' },
         { name: "To Date", selector: (row) => row.toDate, sortable: true, align: 'text-center' },
-        { name: "Registration Fee", selector: (row) => row.registrationFee, sortable: true, align: 'text-center' },
-        { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' },
+        { name: "Offline Fee (₹)", selector: (row) => row.offlineRegistrationFee, sortable: true, align: 'text-center' },
+        { name: "Online Fee (₹)", selector: (row) => row.onlineRegistrationFee, sortable: true, align: 'text-center' },
+        ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
     ];
 
     const mappedData = () => {
-        return programList.map((item, index) => ({
+        return filterOrganizeList.map((item, index) => ({
             sn: index + 1,
-            programName: item.programName || "-",
+            courseCode: item.courseCode || "NA",
+            courseName: item.courseName || "-",
             organizer: item.organizer || "-",
             venue: item.venue || "-",
+            eligibility: item.eligibilityName || "-",
             fromDate: item.fromDate ? format(new Date(item.fromDate), "dd-MM-yyyy") : "-",
             toDate: item.toDate ? format(new Date(item.toDate), "dd-MM-yyyy") : "-",
-            registrationFee: item.registrationFee || "-",
+            offlineRegistrationFee: item.offlineRegistrationFee || "-",
+            onlineRegistrationFee: item.onlineRegistrationFee || "-",
             action: (
                 <>
                     <Tooltip id="Tooltip" className='text-white' />
@@ -90,13 +151,15 @@ const ProgramList = () => {
     const handleEdit = (item) => {
         setEditMode(true);
         setInitialValues({
-            programId: item?.programId || "",
-            programName: item?.programName || "",
+            courseId: item?.courseId || "",
+            courseCode: item?.courseCode || "",
+            courseName: item?.courseName || "",
             organizerId: item?.organizerId || "",
+            eligibilityId: item?.eligibilityId || "",
             fromDate: item?.fromDate || null,
             toDate: item?.toDate || null,
-            registrationFee: item?.registrationFee || null,
-            isRegistration: Number(item?.registrationFee) > 0 ? "Y" : "N",
+            offlineRegistrationFee: item?.offlineRegistrationFee || 0,
+            onlineRegistrationFee: item?.onlineRegistrationFee || null,
             venue: item?.venue || "",
         });
         setShowProgramModal(true);
@@ -104,39 +167,59 @@ const ProgramList = () => {
     }
 
     const programSchema = Yup.object().shape({
-        programName: Yup.string().trim().required("Program Name is required"),
+        courseName: Yup.string().trim().required("Course Name is required"),
+        courseCode: Yup.string().trim().notRequired(),
         organizerId: Yup.string().required("Organized By is required"),
+        eligibilityId: Yup.string().required("Eligibility is required"),
         fromDate: Yup.date().required("From Date is required"),
         toDate: Yup.date()
             .required("To Date is required")
             .min(Yup.ref("fromDate"), "To Date must be after From Date"),
-        isRegistration: Yup.string().required("Please specify if registration fee is applicable"),
-        registrationFee: Yup.number().when("isRegistration", {
-            is: "Y",
-            then: (schema) =>
-                schema
-                    .typeError("Registration Fee must be a number")
-                    .required("Registration Fee is required")
-                    .positive("Registration Fee must be positive"),
-            otherwise: (schema) => schema.nullable(),
-        }),
+        offlineRegistrationFee: Yup.number()
+            .typeError("Amount must be a number")
+            .transform((value, originalValue) =>
+                originalValue === "" ? undefined : value
+            )
+            .required("Offline Fee is required")
+            .min(0, "Amount cannot be negative"),
+        onlineRegistrationFee: Yup.number()
+            .typeError("Amount must be a number")
+            .min(0, "Amount cannot be negative")
+            .nullable()
+            .transform((value, originalValue) => originalValue === "" ? null : value),
         venue: Yup.string().trim().required("Venue is required"),
     });
 
-    const agencyOptions = agencyList.map(data => ({
-        value: data?.organizerId,
-        label: data?.organizer
-    }));
+    const eligibilityOptions = [
+        { value: 0, label: "Add New" },
+        ...eligibilityList.map((item) => ({
+            value: item.eligibilityId,
+            label: item.eligibilityName
+        }))
+    ];
+
+    const organizerOptions = [
+        { value: 0, label: "All" },
+        ...agencyList.map((data) => ({
+            value: data?.organizerId,
+            label: data?.organizer
+        }))
+    ];
+
+    const agencyOptions = organizerOptions.slice(1);
+
+    const handleChangeOrganizer = (orgId) => {
+        setSelectedOrgId(orgId);
+    };
+
 
     const handleProgramSubmit = async (values, { resetForm, setSubmitting }) => {
         try {
-            console.log("valuse", values);
             const dto = {
                 ...values,
-                registrationFee: values.isRegistration === "Y" ? values.registrationFee : 0,
+                fromDate: format(new Date(values.fromDate), "yyyy-MM-dd"),
+                toDate: format(new Date(values.toDate), "yyyy-MM-dd"),
             }
-
-             console.log("dto", dto);
 
             const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
             if (!confirm) {
@@ -148,11 +231,12 @@ const ProgramList = () => {
                     title: "Success",
                     text: response.message,
                     icon: "success",
+                    showConfirmButton: false,
                     timer: 2000,
                 });
                 handleClose();
                 resetForm();
-                fetchData();
+                fetchCourseData(selectedOrgId);
             } else {
                 Swal.fire("Warning", response.message, "warning");
             }
@@ -167,8 +251,57 @@ const ProgramList = () => {
         setShowProgramModal(false);
         setInitialValues(programFeilds);
         setEditMode(false);
+        setShowAddEligibility(false);
+        setEligibilityInput("");
+        setEligibilityError("");
     }
 
+    const handleChangeEligibility = (selected) => {
+        const { setFieldValue } = formikRef.current;
+
+        if (!selected) return;
+
+        if (selected.value === 0) {
+            setShowAddEligibility(true);
+            setEligibilityInput("");
+            setEligibilityError("");
+            setFieldValue("eligibilityId", null);
+            return;
+        }
+
+        setShowAddEligibility(false);
+        setFieldValue("eligibilityId", selected.value);
+    };
+
+    const validateEligibility = () => {
+        if (!eligibilityInput.trim()) {
+            setEligibilityError("Eligibility Name is required");
+            return false;
+        }
+        setEligibilityError("");
+        return true;
+    };
+
+    const handleEligibleSubmit = async () => {
+        if (!validateEligibility()) return;
+        try {
+            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            if (!confirm) return;
+
+            const response = await addEligible({ eligibilityName: eligibilityInput });
+            if (response && response.success) {
+                const newItem = response.data;
+                fetchEligibility();
+                formikRef.current.setFieldValue("eligibilityId", newItem.eligibilityId);
+                setShowAddEligibility(false);
+                setEligibilityInput("");
+            } else {
+                Swal.fire("Warning", response.message, "warning");
+            }
+        } catch (error) {
+            Swal.fire("Warning", handleApiError(error), "warning");
+        }
+    };
 
 
     return (
@@ -176,7 +309,7 @@ const ProgramList = () => {
             <Navbar />
 
             <h3 className="fancy-heading mt-3">
-                Program List
+                Course List
                 <span className="underline-glow">
                     <span className="pulse-dot"></span>
                     <span className="pulse-dot"></span>
@@ -184,17 +317,38 @@ const ProgramList = () => {
                 </span>
             </h3>
 
+            <div className="d-flex justify-content-end align-items-center flex-wrap">
+                <div className="d-flex align-items-center me-3 mb-2">
+                    <label className="font-label fw-bold me-3 mb-0">Organizer :</label>
+                    <div style={{ width: '400px' }} className="text-start">
+                        <Select
+                            options={organizerOptions}
+                            value={organizerOptions.find((item) => item.value === selectedOrgId) || null}
+                            onChange={(selectedOption) => {
+                                const selectedValue = selectedOption ? selectedOption.value : 0; // default to 0
+                                handleChangeOrganizer(selectedValue);
+                            }}
+                            placeholder="Select Organizer"
+                            isSearchable
+                        />
+                    </div>
+                </div>
+            </div>
+
             <div id="card-body" className="p-2 mt-2">
                 {<Datatable columns={columns} data={mappedData()} />}
             </div>
 
             <div>
-                <button
-                    className="add"
-                    onClick={() => setShowProgramModal(true)}>
-                    ADD NEW
-                </button>
+                {canAdd &&
+                    <button
+                        className="add"
+                        onClick={() => setShowProgramModal(true)}>
+                        ADD NEW
+                    </button>
+                }
             </div>
+
             {showProgramModal && (
                 <>
                     <div className="modal-backdrop show custom-backdrop" onClick={handleClose}></div>
@@ -203,7 +357,7 @@ const ProgramList = () => {
                             <div className="modal-content">
 
                                 <div className="modal-header custom-modal-header">
-                                    <h5 className="modal-title">{editMode ? 'Edit Program' : 'Add New Program'}</h5>
+                                    <h5 className="modal-title">{editMode ? 'Edit Course' : 'Add New Course'}</h5>
                                     <button
                                         type="button"
                                         className="btn-close"
@@ -214,38 +368,55 @@ const ProgramList = () => {
                                 <div className="modal-body custom-modal-body">
 
                                     <Formik
+                                        innerRef={formikRef}
                                         initialValues={initialValues}
                                         validationSchema={programSchema}
                                         onSubmit={handleProgramSubmit}
+                                        enableReinitialize
                                     >
                                         {({ setFieldValue, values }) => (
                                             <Form autoComplete="off">
 
                                                 <div className="row text-start">
 
-                                                    <div className="col-md-6 mb-3">
-                                                        <label className="form-label">Program Name</label>
+                                                    <div className="col-md-4 mb-3">
+                                                        <label className="form-label">Course Code (Optional)</label>
                                                         <Field
-                                                            name="programName"
+                                                            name="courseCode"
                                                             className="form-control"
                                                         />
-                                                        <ErrorMessage name="programName" component="div" className="invalid-msg" />
+                                                        <ErrorMessage name="courseCode" component="div" className="invalid-msg" />
                                                     </div>
 
-                                                    <div className="col-md-6 mb-3">
-                                                        <label className="form-label">Organized By</label>
+                                                    <div className="col-md-8 mb-3">
+                                                        <label className="form-label">Course Name
+                                                            <span className="text-danger">*</span>
+                                                        </label>
+                                                        <Field
+                                                            name="courseName"
+                                                            className="form-control"
+                                                        />
+                                                        <ErrorMessage name="courseName" component="div" className="invalid-msg" />
+                                                    </div>
+
+                                                    <div className="col-md-4 mb-3">
+                                                        <label className="form-label">Organized By
+                                                            <span className="text-danger">*</span>
+                                                        </label>
                                                         <Select
                                                             options={agencyOptions}
                                                             value={agencyOptions.find((item) => item.value === Number(values.organizerId)) || null}
                                                             onChange={(option) => setFieldValue("organizerId", option ? option.value : "")}
-                                                            placeholder="Select Organize"
+                                                            placeholder="Select Organizer"
                                                             isSearchable
                                                         />
                                                         <ErrorMessage name="organizerId" component="div" className="invalid-msg" />
                                                     </div>
 
                                                     <div className="col-md-4 mb-3">
-                                                        <label className="form-label">From Date</label>
+                                                        <label className="form-label">From Date
+                                                            <span className="text-danger">*</span>
+                                                        </label>
                                                         <DatePicker
                                                             selected={values.fromDate}
                                                             onChange={(date) =>
@@ -262,7 +433,9 @@ const ProgramList = () => {
                                                     </div>
 
                                                     <div className="col-md-4 mb-3">
-                                                        <label className="form-label">To Date</label>
+                                                        <label className="form-label">To Date
+                                                            <span className="text-danger">*</span>
+                                                        </label>
                                                         <DatePicker
                                                             selected={values.toDate}
                                                             onChange={(date) =>
@@ -280,25 +453,86 @@ const ProgramList = () => {
                                                     </div>
 
                                                     <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Registration Fee Applicable</label>
-                                                        <Field className="form-control" name="isRegistration" as="select">
-                                                            <option value="">Select</option>
-                                                            <option value="Y">Yes</option>
-                                                            <option value="N">No</option>
-                                                        </Field>
-                                                        <ErrorMessage name="isRegistration" component="div" className="invalid-msg" />
+                                                        <label className="form-label">Eligibility
+                                                            <span className="text-danger">*</span>
+                                                        </label>
+                                                        <Select
+                                                            options={eligibilityOptions}
+                                                            value={
+                                                                values.eligibilityId
+                                                                    ? eligibilityOptions.find((item) => item.value === Number(values.eligibilityId))
+                                                                    : null
+                                                            }
+                                                            onChange={(selected) => handleChangeEligibility(selected)}
+                                                            placeholder="Select Eligibility"
+                                                            isSearchable
+                                                        />
+                                                        <ErrorMessage name="eligibilityId" component="div" className="invalid-msg" />
                                                     </div>
 
-                                                    {values.isRegistration === "Y" && (
-                                                        <div className="col-md-6 mb-3">
-                                                            <label className="form-label">Registration Fee (₹)</label>
-                                                            <Field className="form-control" name="registrationFee" type="number" />
-                                                            <ErrorMessage name="registrationFee" component="div" className="invalid-msg" />
+                                                    <div className="col-md-4 mb-3">
+                                                        <label className="form-label">Offline RE Fee (₹)
+                                                            <span className="text-danger">*</span>
+                                                        </label>
+                                                        <Field className="form-control" name="offlineRegistrationFee" type="number" />
+                                                        <ErrorMessage name="offlineRegistrationFee" component="div" className="invalid-msg" />
+                                                    </div>
+
+                                                    <div className="col-md-4 mb-3">
+                                                        <label className="form-label">Online RE Fee (₹)</label>
+                                                        <Field className="form-control" name="onlineRegistrationFee" type="number" />
+                                                        <ErrorMessage name="onlineRegistrationFee" component="div" className="invalid-msg" />
+                                                    </div>
+
+                                                    {showAddEligibility && (
+                                                        <div className="col-md-12 mb-3">
+                                                            <div className="border rounded p-3 bg-light">
+
+                                                                <label className="form-label">
+                                                                    Add New Eligibility <span className="text-danger">*</span>
+                                                                </label>
+
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-control"
+                                                                    placeholder="Enter Eligibility Name"
+                                                                    value={eligibilityInput}
+                                                                    onChange={(e) => {
+                                                                        setEligibilityInput(e.target.value);
+                                                                        if (eligibilityError) setEligibilityError("");
+                                                                    }}
+                                                                />
+
+                                                                {eligibilityError && (
+                                                                    <div className="invalid-msg">{eligibilityError}</div>
+                                                                )}
+
+                                                                <div className="mt-2 d-flex gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-sm btn-success"
+                                                                        onClick={handleEligibleSubmit}
+                                                                    >
+                                                                        SAVE
+                                                                    </button>
+
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-sm btn-secondary"
+                                                                        onClick={() => setShowAddEligibility(false)}
+                                                                    >
+                                                                        CANCEL
+                                                                    </button>
+                                                                </div>
+
+                                                            </div>
                                                         </div>
                                                     )}
 
-                                                    <div className="col-md-6 mb-3">
-                                                        <label className="form-label">Venue</label>
+                                                    <div className="col-md-8 mb-3">
+                                                        <label className="form-label">Venue
+                                                            <span className="text-danger">*</span>
+                                                        </label>
                                                         <Field
                                                             name="venue"
                                                             className="form-control"
@@ -333,7 +567,6 @@ const ProgramList = () => {
                     </div>
                 </>
             )}
-
 
         </div>
     );

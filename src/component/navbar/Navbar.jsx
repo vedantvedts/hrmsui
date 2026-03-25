@@ -4,8 +4,8 @@ import { FaHome, FaHSquare, FaUserClock } from "react-icons/fa";
 import { FaAddressCard, FaBell, FaCaretDown } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import "./navbar.css";
-import { getHeaderModuleDetailList, getHeaderModuleList } from "../../service/admin.service";
-import * as FaIcons from "react-icons/fa";
+import { getHeaderModuleDetailList, getHeaderModuleList, getNotifiCount, getNotifiList, updateNotification } from "../../service/admin.service";
+import * as FaIcons from "react-icons/fa6";
 
 
 const Navbar = () => {
@@ -16,7 +16,7 @@ const Navbar = () => {
     const [notifiCount, setNotifiCount] = useState(0);
     const [notifiList, setNotifiList] = useState([]);
     const title = localStorage.getItem("title");
-    const roleName = localStorage.getItem("roleName");
+    const salutation = localStorage.getItem("salutation");
     const empName = localStorage.getItem("empName");
     const designationCode = localStorage.getItem("designationCode");
     const roleId = localStorage.getItem("roleId");
@@ -50,19 +50,40 @@ const Navbar = () => {
         try {
             const moduleDetailListResponse = await getHeaderModuleDetailList(roleId);
             setHeaderModuleDetailList(moduleDetailListResponse);
-            //   const notifiCount = await getNotifiCount();
-            //   const notifiList = await getNotifiList();
-            //   setNotifiCount(notifiCount);
-            //   setNotifiList(notifiList);
+            const notifiCount = await getNotifiCount();
+            const notifiList = await getNotifiList();
+            setNotifiCount(notifiCount);
+            setNotifiList(notifiList);
 
         } catch (error) {
             console.error('Error fetching Header Module Detail list:', error);
         }
     };
 
-    const changePassword = async () => {
+    const gotoNoti = async (event, item) => {
+        event.preventDefault();
+        try {
+            const response = await updateNotification(item.notificationId);
+            if (response === 200) {
+                const notifiList = await getNotifiList();
+                const notifiCount = await getNotifiCount();
+                setNotifiCount(notifiCount);
+                setNotifiList(notifiList);
+                const url = item.notificationUrl;
+                navigate(`/${url}`);
+            }
+        } catch (error) {
+            console.error("Error updating notification:", error);
+        }
+    };
 
-    }
+    const formatName = () => {
+        const cleanTitle = (title && title !== "null") ? title : (salutation && salutation !== "null") ? salutation : "";
+        const cleanName = (empName && empName !== "null") ? empName : "";
+        const cleanDesignation = (designationCode && designationCode !== "null") ? `, ${designationCode}` : "";
+
+        return `${cleanTitle} ${cleanName}`.trim() + cleanDesignation;
+    };
 
     return (
         <nav className="navbar sticky-top navbar-expand-lg navbar-dark bg-dark-new nav-ams">
@@ -79,12 +100,8 @@ const Navbar = () => {
                                             <span className="neon-text">HRMS</span>
                                         </h3>
 
-                                        <h6
-                                            className="mb-0 d-flex align-items-end login-name"
-                                            style={{ fontSize: "1rem" }}
-                                        >
-                                            {title || ''} {empName}, {designationCode || ''}
-                                            {/* ({roleName || ''}) */}
+                                        <h6 className="mb-0 d-flex align-items-end login-name" style={{ fontSize: "1rem" }}>
+                                            {formatName()}
                                         </h6>
                                     </div>
                                 </a>
@@ -153,6 +170,7 @@ const Navbar = () => {
                                 </ul>
                             </li> */}
 
+
                             <li className="nav-item dropdown" >
                                 <a href="#" className="nav-link nav-animate">
                                     <FaBell className="icon-name" />
@@ -163,7 +181,54 @@ const Navbar = () => {
                                         <strong className="fw-bold ">Notifications</strong>
                                     </li>
 
+                                    <div className="notifyStyles1" >
+                                        {notifiList.length > 0 ? (
+                                            notifiList.map((item, index) => {
+                                                const formatMessage = (message) => {
+                                                    if (message.length > 35) {
+                                                        let splitPoint = message.substring(0, 35).lastIndexOf(' ');
+                                                        if (splitPoint === -1 || splitPoint < 15) {
+                                                            splitPoint = 35;
+                                                        }
+                                                        const firstPart = message.substring(0, splitPoint);
+                                                        const secondPart = message.substring(splitPoint).trim();
+                                                        return (
+                                                            <>
+                                                                {firstPart}
+                                                                <br />
+                                                                {secondPart}
+                                                            </>
+                                                        );
+                                                    }
+                                                    return message;
+                                                };
 
+                                                return (
+                                                    <li key={index}>
+                                                        <a
+                                                            className="dropdown-item d-flex align-items-start gap-2 py-2 border-bottom"
+                                                            href={item.notificationUrl}
+                                                            onClick={(event) => gotoNoti(event, item)}
+                                                        >
+                                                            <span className="fs-14" >
+                                                                {formatMessage(item.notificationMessage)}
+                                                            </span>
+                                                        </a>
+                                                    </li>
+                                                );
+                                            })
+                                        ) : (
+                                            <li className="px-3 py-2 text-muted">No Notifications</li>
+                                        )}
+                                    </div>
+
+                                    {notifiList.length > 0 && (
+                                        <li className="dropdown-footer text-center py-2 bg-white sticky-bottom z-10 border-top">
+                                            <a className="dropdown-item fs-14" href="/notification-list" >
+                                                Show All Alerts
+                                            </a>
+                                        </li>
+                                    )}
 
                                 </ul>
                             </li>

@@ -19,6 +19,11 @@ import SignAuthority from "../component/master/signAuthority";
 import config from "../environment/config.js"
 import { useState } from 'react';
 import { setLocalStorageData } from "../service/auth.service.jsx";
+import RequisitionApproval from "../component/training/requisitionApproval.jsx";
+import Transaction from "../component/transaction/transaction.jsx";
+import Evaluation from "../component/training/evaluation.jsx";
+import Eligibility from "../component/master/eligibility.jsx";
+import AllReportsTemplate from "../component/reports/AllReportsTemplate.jsx";
 
 function AppRoutes() {
 
@@ -37,18 +42,13 @@ function AppRoutes() {
  useEffect(() => {
   const handleMessage = async (event) => {
     // 1. Security check
-    console.log("event.origin", event.origin);
     if (event.origin !== TMDS_URL) return;
 
     if (event.data.user) {
-      console.log("New user received, cleaning old session...");
       
       // 2. Clear everything to prevent User A's data from hanging around
       localStorage.clear(); 
       localStorage.setItem("user", JSON.stringify(event.data.user));
-
-      console.log("User data from MDM:", event.data.user);
-      console.log("Setting local storage data...",event.data.user.username);
 
       if (event.data.user.username) {
         await setLocalStorageData(event.data.user.username);
@@ -116,7 +116,7 @@ function AppRoutes() {
         <Route path="/employee" element={<Employee />} />
         <Route path="/designation" element={<Designation />} />
         <Route path="/division" element={<Division />} />
-        <Route path="/program" element={<ProgramList />} />
+        <Route path="/course" element={<ProgramList />} />
         <Route path="/organizer" element={<OrganizerList />} />
         <Route path="/users" element={<UserManagerList />} />
         <Route path="/roleaccess" element={<FormRoleAccess />} />
@@ -125,7 +125,12 @@ function AppRoutes() {
         <Route path="/feedback-add" element={<Feedback />} />
         <Route path="/feedback" element={<FeedbackList />} />
         <Route path="/req-add-edit" element={<AddEditRequisition />} />
+        <Route path="/req-approval" element={<RequisitionApproval />} />
         <Route path="/sign-authority" element={<SignAuthority />} />
+        <Route path="/transaction" element={<Transaction />} />
+        <Route path="/evaluation" element={<Evaluation />} />
+        <Route path="/eligibility" element={<Eligibility />} />
+        <Route path="/reports" element={<AllReportsTemplate />} />
       </Routes>
 
     </>

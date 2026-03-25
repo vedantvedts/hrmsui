@@ -16,7 +16,7 @@ export const login = async (username, password) => {
 
     const loginData = {
       username: username.trim(),
-      password: LABCODE==='CAIR' ? password : encryptedPassword,
+      password: LABCODE === 'CAIR' ? password : encryptedPassword,
       timestamp: timestamp
     };
 
@@ -32,14 +32,13 @@ export const login = async (username, password) => {
       );
       const emp = await getUserDetails(username);
 
-      console.log('User details:', emp);
-
       localStorage.setItem('loginId', emp?.data.loginId);
       localStorage.setItem('empId', emp?.data.empId);
       localStorage.setItem('empName', emp?.data.empName);
       localStorage.setItem('roleName', emp?.data.roleName);
       localStorage.setItem('designationCode', emp?.data.empDesigName);
       localStorage.setItem('title', emp?.data.title);
+      localStorage.setItem('salutation', emp?.data.salutation);
       localStorage.setItem('roleId', emp?.data.roleId);
 
 
@@ -59,19 +58,17 @@ export const setLocalStorageData = async (username) => {
   }
 
   try {
-     const emp = await getUserDetails(username);
+    const emp = await getUserDetails(username);
 
-      console.log('User details:', emp);
+    localStorage.setItem('loginId', emp?.data.loginId);
+    localStorage.setItem('empId', emp?.data.empId);
+    localStorage.setItem('empName', emp?.data.empName);
+    localStorage.setItem('roleName', emp?.data.roleName);
+    localStorage.setItem('designationCode', emp?.data.empDesigName);
+    localStorage.setItem('title', emp?.data.title);
+    localStorage.setItem('roleId', emp?.data.roleId);
+    //await customAuditStampingLogin(username);
 
-      localStorage.setItem('loginId', emp?.data.loginId);
-      localStorage.setItem('empId', emp?.data.empId);
-      localStorage.setItem('empName', emp?.data.empName);
-      localStorage.setItem('roleName', emp?.data.roleName);
-      localStorage.setItem('designationCode', emp?.data.empDesigName);
-      localStorage.setItem('title', emp?.data.title);
-      localStorage.setItem('roleId', emp?.data.roleId);
-      //await customAuditStampingLogin(username);
-    
   } catch (error) {
     console.error('Error occurred in getEmpDetails()', error);
     throw error;
@@ -80,18 +77,15 @@ export const setLocalStorageData = async (username) => {
 
 export const logout = async (logoutType) => {
   const user = getCurrentUser();
-  const keysToRemove = [
-    'loginId', 'roleName', 'empName', 'user','empId'
-  ];
   if (user && user.username) {
     try {
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      localStorage.clear();
     } catch (error) {
       console.error('Error occurred in logout:', error);
       throw error;
     }
   } else {
-    keysToRemove.forEach(key => localStorage.removeItem(key));
+    localStorage.clear();
   }
 };
 

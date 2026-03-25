@@ -9,9 +9,12 @@ import * as Yup from "yup";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
 import { handleApiError } from "../../service/master.service";
 import { FaEdit } from "react-icons/fa";
+import { usePermission } from "../../common/usePermission";
 
 
 const OrganizerList = () => {
+
+    const { canView, canAdd, canEdit, canDelete } = usePermission("Organizer");
 
     const [organizerList, setOrganizerList] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -49,7 +52,7 @@ const OrganizerList = () => {
         { name: "Phone", selector: (row) => row.phoneNo, sortable: true, align: 'text-center' },
         { name: "Fax No", selector: (row) => row.faxNo, sortable: true, align: 'text-center' },
         { name: "Email", selector: (row) => row.email, sortable: true, align: 'text-center' },
-        { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' },
+        ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
     ];
 
     const mappedData = () => {
@@ -106,13 +109,12 @@ const OrganizerList = () => {
     const handleSubmit = async (values, { resetForm, setSubmitting }) => {
         try {
 
-            console.log("values", values);
             const dto = {
-                contactName:values.contactName?.trim(),
-                email:values.email?.trim(),
-                faxNo:values.faxNo?.trim(),
-                organizer:values.organizer?.trim(),
-                phoneNo:values.phoneNo?.trim(),
+                contactName: values.contactName?.trim(),
+                email: values.email?.trim(),
+                faxNo: values.faxNo?.trim(),
+                organizer: values.organizer?.trim(),
+                phoneNo: values.phoneNo?.trim(),
 
             }
 
@@ -126,6 +128,7 @@ const OrganizerList = () => {
                     title: "Success",
                     text: response.message,
                     icon: "success",
+                    showConfirmButton: false,
                     timer: 2000,
                 });
                 handleClose();
@@ -167,12 +170,15 @@ const OrganizerList = () => {
             </div>
 
             <div>
-                <button
-                    className="add"
-                    onClick={() => setShowModal(true)}>
-                    ADD NEW
-                </button>
+                {canAdd &&
+                    <button
+                        className="add"
+                        onClick={() => setShowModal(true)}>
+                        ADD NEW
+                    </button>
+                }
             </div>
+
             {showModal && (
                 <>
                     <div className="modal-backdrop show custom-backdrop" onClick={handleClose}></div>
