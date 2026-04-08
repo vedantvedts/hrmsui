@@ -24,6 +24,7 @@ import Transaction from "../component/transaction/transaction.jsx";
 import Evaluation from "../component/training/evaluation.jsx";
 import Eligibility from "../component/master/eligibility.jsx";
 import AllReportsTemplate from "../component/reports/AllReportsTemplate.jsx";
+import RequisitionApprovedList from "../component/approval/requisitionApprovedList.jsx";
 
 function AppRoutes() {
 
@@ -131,6 +132,7 @@ function AppRoutes() {
         <Route path="/evaluation" element={<Evaluation />} />
         <Route path="/eligibility" element={<Eligibility />} />
         <Route path="/reports" element={<AllReportsTemplate />} />
+        <Route path="/req-approved-list" element={<RequisitionApprovedList />} />
       </Routes>
 
     </>
