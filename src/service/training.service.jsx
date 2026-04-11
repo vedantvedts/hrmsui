@@ -469,3 +469,95 @@ export const recommendToDFA = async (data) => {
         throw error;
     }
 };
+
+
+export const getCepList = async () => {
+    try {
+        const response = await axios.get(`${API_URL}api/training/cep`, {
+            headers: {
+                ...authHeader()
+            }
+        });
+        return response.data;
+
+    } catch (error) {
+        console.error('Error occurred in getCepList():', error);
+        throw error;
+    }
+};
+
+
+export const getCepDataById = async (id) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/cepById/${id}`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getCepDataById():', error);
+        throw error;
+    }
+};
+
+
+export const AddCepData = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/add-CEP`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in AddCepData():', error);
+        throw error;
+    }
+};
+
+
+export const editCepData = async (data) => {
+    try {
+        const response = await axios.put(`${API_URL}api/training/Edit-cep`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } });
+        return response.data;
+    } catch (error) {
+        console.error("Error updating program", error);
+        return { success: false, message: "Something went wrong" };
+    }
+};
+
+
+
+export const getDistribution = async () => {
+    try {
+        const response = await axios.get(`${API_URL}api/training/distribution`, {
+            headers: {
+                ...authHeader()
+            }
+        });
+        return response.data;
+
+    } catch (error) {
+        console.error('Error occurred in getDistribution():', error);
+        throw error;
+    }
+};
+
+export const Adddistrubutiondata = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/add-distributions`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in AdddistributionData():', error);
+        throw error;
+    }
+};
+
+export const EditDistribution = async (data) => {
+    try {
+        const response = await axios.put(`${API_URL}api/training/edit-distribution`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } });
+        return response.data;
+    } catch (error) {
+        console.error("Error updating program", error);
+        return { success: false, message: "Something went wrong" };
+    }
+};
+
+export const getDistributionByID = async (id) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/distributionById/${id}`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getDistributionByID():', error);
+        throw error;
+    }
+};

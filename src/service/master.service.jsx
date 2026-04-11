@@ -122,3 +122,15 @@ export const updateSignRoleAuthority = async (payload) => {
         throw error;
     }
 };
+
+export const getProjectList = async () => {
+    try {
+        return (await axios.get(`${API_URL}api/master/project`, {
+            headers: { 'Content-Type': 'application/json', ...authHeader() },
+        },
+        )).data;
+    } catch (error) {
+        console.error('Error occurred in getProjectList():', error);
+        throw error;
+    }
+};
