@@ -111,7 +111,7 @@ export const ExportUtils = {
 
     const docDefinition = {
       pageOrientation: "landscape",
-      pageSize: "A4",
+      pageSize:  columns.length <=10 ? "A4" : "A3",
       pageMargins: [40, 60, 40, 60],
 
       // PREMIUM FOOTER (From your project design)

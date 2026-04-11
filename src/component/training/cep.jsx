@@ -23,7 +23,7 @@ const CepComponent = () => {
             const response = await getCepList();
             Setcep(response.data);
         } catch (error) {
-            console.error("Error fetching employees:", error);
+            console.error("Error fetching cep list:", error);
         }
     };
 

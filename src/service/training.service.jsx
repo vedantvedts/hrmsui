@@ -475,6 +475,7 @@ export const getCepList = async () => {
     try {
         const response = await axios.get(`${API_URL}api/training/cep`, {
             headers: {
+                'Content-Type': 'application/json',
                 ...authHeader()
             }
         });
@@ -497,9 +498,9 @@ export const getCepDataById = async (id) => {
 };
 
 
-export const AddCepData = async (data) => {
+export const addCepData = async (data) => {
     try {
-        return (await axios.post(`${API_URL}api/training/add-CEP`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+        return (await axios.post(`${API_URL}api/training/add-cep`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
     } catch (error) {
         console.error('Error occurred in AddCepData():', error);
         throw error;
@@ -509,7 +510,7 @@ export const AddCepData = async (data) => {
 
 export const editCepData = async (data) => {
     try {
-        const response = await axios.put(`${API_URL}api/training/Edit-cep`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } });
+        const response = await axios.put(`${API_URL}api/training/edit-cep`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } });
         return response.data;
     } catch (error) {
         console.error("Error updating program", error);

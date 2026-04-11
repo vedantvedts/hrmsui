@@ -12,6 +12,19 @@ const HigherDegreeMtech = () => {
     const navigate = useNavigate();
     const [sponsorships, setSponsorships] = useState([]);
 
+    useEffect(() => {
+        fetchData("MTECH");
+    }, []);
+
+    const fetchData = async (type) => {
+        try {
+            const response = await getsponsorshipList(type);
+            setSponsorships(response?.data || []);
+        } catch (error) {
+            console.error("Error fetching sponsorship list", error);
+        }
+    };
+
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
         { name: "Emplopyee Name", selector: (row) => row.employeeName, sortable: true },
@@ -34,11 +47,10 @@ const HigherDegreeMtech = () => {
 
     const mappedData = () => {
         return sponsorships
-            .filter(item => item.degreeType === "MTECH")
             .map((item, index) => {
                 return {
                     sn: index + 1,
-                    employeeName: item.employeeName || "NA",
+                    employeeName: `${item.employeeName}, ${item.empDesigCode}`|| "NA",
                     delegatedPower: item.delegatedPower || "NA",
                     discipline: item.discipline || "NA",
                     subject: item.subject || "NA",
@@ -69,18 +81,6 @@ const HigherDegreeMtech = () => {
             });
     };
 
-    const fetchData = async () => {
-        try {
-            const response = await getsponsorshipList();
-            setSponsorships(response?.data || []);
-        } catch (error) {
-            console.error("Error fetching sponsorship list", error);
-        }
-    };
-    useEffect(() => {
-        fetchData();
-
-    }, []);
 
     const handleEdit = (item) => {
         navigate("/higherDegree-add", {

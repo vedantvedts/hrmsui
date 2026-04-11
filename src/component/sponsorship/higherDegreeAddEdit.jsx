@@ -14,16 +14,16 @@ import AlertConfirmation from "../../common/AlertConfirmation.component";
 
 const HigherDegreeAddEdit = () => {
 
-const navigate = useNavigate();
-const location = useLocation();
-const degreeType =location.state?.degreeType || location.state?.editData?.degreeType ||"";
+    const navigate = useNavigate();
+    const location = useLocation();
+    const degreeType = location.state?.degreeType || location.state?.editData?.degreeType || "";
 
-const isEdit = location.state?.isEdit || false;
-const editData = location.state?.editData || null;
+    const isEdit = location.state?.isEdit || false;
+    const editData = location.state?.editData || null;
 
-const [employeeList, setEmployeeList] = useState([]);
-const roleName = localStorage.getItem("roleName");
-const empId = localStorage.getItem("empId");
+    const [employeeList, setEmployeeList] = useState([]);
+    const roleName = localStorage.getItem("roleName");
+    const empId = localStorage.getItem("empId");
 
     const fetchEmployees = async () => {
         try {
@@ -35,26 +35,26 @@ const empId = localStorage.getItem("empId");
     };
 
     const fetchSponsorshipData = async (id) => {
-    try {
-        const response = await getSponsorshipDataById(id);
-        const data = response?.data;
-        setInitialValues({
-            ...data,
-            fromDate: data?.fromDate ? new Date(data.fromDate) : null,
-            toDate: data?.toDate ? new Date(data.toDate) : null,
-        });
-    } catch (error) {
-        console.error("Error fetching sponsorship:", error);
-    }
-};
+        try {
+            const response = await getSponsorshipDataById(id);
+            const data = response?.data;
+            setInitialValues({
+                ...data,
+                fromDate: data?.fromDate ? new Date(data.fromDate) : null,
+                toDate: data?.toDate ? new Date(data.toDate) : null,
+            });
+        } catch (error) {
+            console.error("Error fetching sponsorship:", error);
+        }
+    };
 
-useEffect(() => {
-    fetchEmployees();
+    useEffect(() => {
+        fetchEmployees();
 
-    if (isEdit && editData?.sponsorshipId) {
-        fetchSponsorshipData(editData.sponsorshipId);
-    }
-}, []);
+        if (isEdit && editData?.sponsorshipId) {
+            fetchSponsorshipData(editData.sponsorshipId);
+        }
+    }, []);
 
 
     const employeeOptions = employeeList.map((emp) => ({
@@ -98,9 +98,8 @@ useEffect(() => {
                     desigCadre: firstEmp.desigCadre || ""
                 }));
 
-            } 
-            else
-                {
+            }
+            else {
                 const matchedEmp = employeeList.find(
                     emp => emp.empId === Number(editData?.empId)
                 );
@@ -119,7 +118,7 @@ useEffect(() => {
         }
     }, [employeeList]);
 
-        const calculateDuration = (fromDate, toDate, setFieldValue) => {
+    const calculateDuration = (fromDate, toDate, setFieldValue) => {
         if (fromDate && toDate) {
             const diffTime = new Date(toDate) - new Date(fromDate);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
@@ -132,74 +131,74 @@ useEffect(() => {
         }
     };
 
-   const validationSchema = Yup.object({
+    const validationSchema = Yup.object({
 
-    empId: Yup.string()
-        .trim()
-        .required("Employee is required"),
+        empId: Yup.string()
+            .trim()
+            .required("Employee is required"),
 
-    city: Yup.string()
-        .trim()
-        .matches(/^[A-Za-z\s]+$/, "Only alphabets allowed")
-        .required("City is required"),
+        city: Yup.string()
+            .trim()
+            .matches(/^[A-Za-z\s]+$/, "Only alphabets allowed")
+            .required("City is required"),
 
-    period: Yup.number()
-        .typeError("Period must be a number")
-        .positive("Must be greater than 0")
-        .integer("Must be a whole number")
-        .required("Period is required"),
+        period: Yup.number()
+            .typeError("Period must be a number")
+            .positive("Must be greater than 0")
+            .integer("Must be a whole number")
+            .required("Period is required"),
 
-    discipline: Yup.string()
-        .trim()
-        .required("Discipline is required"),
+        discipline: Yup.string()
+            .trim()
+            .required("Discipline is required"),
 
-    expenditure: Yup.number()
-        .typeError("Expenditure must be a number")
-        .positive("Must be greater than 0")
-        .required("Expenditure is required"),
+        expenditure: Yup.number()
+            .typeError("Expenditure must be a number")
+            .positive("Must be greater than 0")
+            .required("Expenditure is required"),
 
-    delegatedPower: Yup.string()
-        .trim()
-        .matches(/^[A-Za-z\s]+$/, "Only alphabets allowed")
-        .required("Delegated Power is required"),
+        delegatedPower: Yup.string()
+            .trim()
+            .matches(/^[A-Za-z\s]+$/, "Only alphabets allowed")
+            .required("Delegated Power is required"),
 
-    subject: Yup.string()
-        .trim()
-        .matches(/^[A-Za-z\s.]+$/, "Only alphabets allowed")
-        .required("Subject is required"),
+        subject: Yup.string()
+            .trim()
+            .matches(/^[A-Za-z\s.]+$/, "Only alphabets allowed")
+            .required("Subject is required"),
 
-    fromDate: Yup.date()
-        .required("From Date is required"),
+        fromDate: Yup.date()
+            .required("From Date is required"),
 
-    toDate: Yup.date()
-        .required("To Date is required")
-        .min(Yup.ref("fromDate"), "To Date must be after From Date"),
+        toDate: Yup.date()
+            .required("To Date is required")
+            .min(Yup.ref("fromDate"), "To Date must be after From Date"),
 
-    university: Yup.string()
-        .trim()
-        .matches(/^[A-Za-z\s.]+$/, "Only alphabets allowed")
-        .required("University is required"),
+        university: Yup.string()
+            .trim()
+            .matches(/^[A-Za-z\s.]+$/, "Only alphabets allowed")
+            .required("University is required"),
 
-    preference: Yup.string()
-        .trim()
-        .required("Location is required"),
-});
+        preference: Yup.string()
+            .trim()
+            .required("Location is required"),
+    });
 
     const handleSubmit = async (values, { setSubmitting, resetForm }) => {
-    try {
-    const payload = {
+        try {
+            const payload = {
                 ...values,
                 fromDate: format(new Date(values.fromDate), "yyyy-MM-dd"),
                 toDate: format(new Date(values.toDate), "yyyy-MM-dd"),
                 preference: values.preference,
 
             };
-     const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
             if (!confirm) {
                 return;
             }
 
-     const response = isEdit
+            const response = isEdit
                 ? await editHigherDegree(payload)
                 : await addHigherDegree(payload);
 
@@ -212,8 +211,11 @@ useEffect(() => {
                     timer: 1500,
                 });
                 resetForm();
-                navigate(-1);
-
+                if (degreeType === "MTECH") {
+                    navigate("/degree-mtech");
+                } else {
+                    navigate("/degree-phd");
+                }
             } else {
                 Swal.fire("Warning", response.message, "warning");
             }
@@ -222,30 +224,30 @@ useEffect(() => {
         } finally {
             setSubmitting(false);
         }
-        
+
     };
 
     return (
         <div>
             <Navbar />
-            
-                  <h3 className="fancy-heading mt-3">
-                     {isEdit ? "Edit" : "Add"} Higher Degree , {degreeType}
-            <span className="underline-glow">
-                <span className="pulse-dot"></span>
-                <span className="pulse-dot"></span>
-                <span className="pulse-dot"></span>
-            </span>
-        </h3>
-      
+
+            <h3 className="fancy-heading mt-3">
+                {isEdit ? "Edit" : "Add"} Higher Degree , {degreeType}
+                <span className="underline-glow">
+                    <span className="pulse-dot"></span>
+                    <span className="pulse-dot"></span>
+                    <span className="pulse-dot"></span>
+                </span>
+            </h3>
+
 
             <div className="p-5">
                 <div className="card p-3 shadow-sm border-rounded">
                     <Formik
-                         initialValues={initialValues}
-                         validationSchema={validationSchema}
-                         onSubmit={handleSubmit}
-                         enableReinitialize
+                        initialValues={initialValues}
+                        validationSchema={validationSchema}
+                        onSubmit={handleSubmit}
+                        enableReinitialize
                     >
                         {({ setFieldValue, values }) => (
                             <Form autoComplete="off">
@@ -257,8 +259,8 @@ useEffect(() => {
                                             options={employeeOptions}
                                             value={employeeOptions.find(
                                                 (item) => item.value === Number(values.empId)
-                                            )|| null
-                                        }
+                                            ) || null
+                                            }
                                             onChange={(option) => {
                                                 if (option) {
                                                     const emp = option.data;
@@ -276,22 +278,22 @@ useEffect(() => {
 
                                     <div className="col-md-2">
                                         <label className="form-label">Designation</label>
-                                        <Field name="designation" type="text" className="form-control" readOnly disabled />
+                                        <Field name="designation" type="text" className="form-control" disabled />
                                     </div>
 
                                     <div className="col-md-2">
                                         <label className="form-label">Emp No.</label>
-                                        <Field name="empNo" type="text" className="form-control" readOnly disabled />
+                                        <Field name="empNo" type="text" className="form-control" disabled />
                                     </div>
 
                                     <div className="col-md-2">
                                         <label className="form-label">Division</label>
-                                        <Field name="division" type="text" className="form-control" readOnly disabled />
+                                        <Field name="division" type="text" className="form-control" disabled />
                                     </div>
 
                                     <div className="col-md-3">
                                         <label className="form-label">Cadre</label>
-                                        <Field name="desigCadre" type="text" className="form-control" readOnly disabled />
+                                        <Field name="desigCadre" type="text" className="form-control" disabled />
                                     </div>
 
 
@@ -319,7 +321,7 @@ useEffect(() => {
                                         <ErrorMessage name="city" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-3">
+                                    <div className="col-md-2">
                                         <label className="form-label">From Date</label>
                                         <DatePicker
                                             id="fromDate"
@@ -340,7 +342,7 @@ useEffect(() => {
                                         <ErrorMessage name="fromDate" component="div" className="text-danger small" />
                                     </div>
 
-                                    <div className="col-md-3">
+                                    <div className="col-md-2">
                                         <label className="form-label">To Date</label>
                                         <DatePicker
                                             id="toDate"
@@ -369,7 +371,7 @@ useEffect(() => {
                                         <ErrorMessage name="period" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-3">
+                                    <div className="col-md-2">
                                         <label className="form-label">Discipline</label>
                                         <select className="form-select "
                                             name="discipline"
@@ -377,12 +379,12 @@ useEffect(() => {
                                             onChange={(e) => setFieldValue("discipline", e.target.value)}
                                         >
                                             <option value="Regular">Regular</option>
-                                            <option value="Partial">Partial</option>
+                                            <option value="Part Time">Part Time</option>
                                         </select>
                                         <ErrorMessage name="discipline" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-3">
+                                    <div className="col-md-2">
                                         <label className="form-label">Location</label>
                                         <select className="form-select"
                                             name="preference"
@@ -395,7 +397,7 @@ useEffect(() => {
                                     </div>
 
 
-                                    <div className="col-md-3">
+                                    <div className="col-md-2">
                                         <label className="form-label">Expenditure (₹)</label>
                                         <Field name="expenditure" type="text" className="form-control" />
                                         <ErrorMessage name="expenditure" component="div" className="invalid-msg" />
@@ -405,8 +407,8 @@ useEffect(() => {
 
                                 <div className="text-center mt-2 mb-3">
                                     <button type="submit" className={isEdit ? `update` : `submit`}>
-                                         {isEdit ? "Update" : "Submit"} 
-                                     </button>
+                                        {isEdit ? "Update" : "Submit"}
+                                    </button>
 
                                     <button
                                         type="button"

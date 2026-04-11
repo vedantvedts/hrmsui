@@ -7,7 +7,7 @@ import DatePicker from 'react-datepicker';
 import * as Yup from "yup";
 import "react-datepicker/dist/react-datepicker.css";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
-import { AddCepData, editCepData, getCepDataById } from '../../service/training.service';
+import { addCepData, editCepData, getCepDataById } from '../../service/training.service';
 import Select from "react-select";
 import { format } from "date-fns";
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -101,7 +101,7 @@ const AddEditCepComponent = () => {
 
       const response = isEdit
         ? await editCepData({ ...payload, cepId: editData?.cepId })
-        : await AddCepData(payload);
+        : await addCepData(payload);
 
       if (response && response.success) {
         Swal.fire({
@@ -177,7 +177,7 @@ const AddEditCepComponent = () => {
     <div>
       <Navbar />
       <h3 className="fancy-heading mt-3">
-              {isEdit ? "Edit CEP" : "Add CEP"}
+        {isEdit ? "Edit CEP" : "Add CEP"}
         <span className="underline-glow">
           <span className="pulse-dot"></span>
           <span className="pulse-dot"></span>
@@ -301,14 +301,14 @@ const AddEditCepComponent = () => {
                 <div className="text-center mt-3">
                   <button
                     type="btn"
-                    className={`btn ${isEdit ? "update" : "submit"}`}
+                    className={`${isEdit ? "update" : "submit"}`}
                   >
                     {isEdit ? "UPDATE" : "SUBMIT"}
                   </button>
                   <button
                     type="button"
                     className="back"
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate("/cep")}
                   >
                     Back
                   </button>
