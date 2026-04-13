@@ -70,7 +70,8 @@ const AddEditCepComponent = () => {
     amountSpent: Yup.number()
       .typeError("Amount Spent must be a number")
       .positive("Must be greater than 0")
-      .required("Amount Spent is required"),
+      .required("Amount Spent is required")
+      .max(Yup.ref('totalAmount'), "Amount spent cannot exceed Total amount"),
 
     comments: Yup.string()
       .trim()
