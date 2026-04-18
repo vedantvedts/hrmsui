@@ -524,11 +524,11 @@ export const getDistribution = async () => {
     try {
         const response = await axios.get(`${API_URL}api/training/distribution`, {
             headers: {
+                'Content-Type': 'application/json',
                 ...authHeader()
             }
         });
         return response.data;
-
     } catch (error) {
         console.error('Error occurred in getDistribution():', error);
         throw error;
@@ -559,6 +559,15 @@ export const getDistributionByID = async (id) => {
         return (await axios.get(`${API_URL}api/training/distributionById/${id}`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
     } catch (error) {
         console.error('Error occurred in getDistributionByID():', error);
+        throw error;
+    }
+};
+
+export const addProjectRoleIds = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/add-project-role`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in addProjectRoleIds():', error);
         throw error;
     }
 };

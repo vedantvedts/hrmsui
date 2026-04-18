@@ -56,13 +56,16 @@ const HigherDegreeAddEdit = () => {
         }
     }, []);
 
-
-    const employeeOptions = employeeList.map((emp) => ({
-        value: emp.empId,
-        label: ((emp.title || "") + ' ' + emp.empName || "").trim(),
-        data: emp
-    }));
-
+   const employeeOptions = employeeList.map((emp) => ({
+    value: emp.empId,
+    label: (
+        (emp.salutation?.trim() || emp.title?.trim() || "") +
+        " " +
+        (emp.empName || "") 
+      
+    ).trim(),
+    data: emp
+}));
 
     const [initialValues, setInitialValues] = useState({
         empId: isEdit ? editData?.empId : "",
