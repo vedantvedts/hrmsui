@@ -8,24 +8,23 @@ import { FaEdit } from 'react-icons/fa';
 import { Tooltip } from "react-tooltip";
 
 const DistributionComponent = () => {
-     const navigate = useNavigate();
-     const [distribution, Setdistribution] = useState([]);
+    const navigate = useNavigate();
+    const [distribution, Setdistribution] = useState([]);
 
-     const columns = [
-      { name: "SN", selector: (row) => row.sn, sortable: true, center: true },
-      { name: "Project Code", selector: (row) => row.projectCode, sortable: true, center: true },
-      { name: "Employee Name", selector: (row) => row.employeeName, sortable: true ,align: 'text-start'},
-      { name: "AO Officer", selector: (row) => row.aoOfficerName, sortable: true ,align: 'text-start'},
-      { name: "RO Officer", selector: (row) => row.roOfficerName, sortable: true,align: 'text-start' },
-      { name: "Tech Activity", selector: (row) => row.techActivity },
-      { name: "Non-Tech Activity", selector: (row) => row.nonTechActivity }, 
-      { name: "Action", selector: (row) => row.action, align: 'text-center' },
-];
 
- const mappedData = () => {
+    const columns = [
+        { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center'  },
+        { name: "Employee Name", selector: (row) => row.employeeName, sortable: true, align: 'text-start' },
+        { name: "AO Officer", selector: (row) => row.aoOfficerName, sortable: true, align: 'text-start' },
+        { name: "RO Officer", selector: (row) => row.roOfficerName, sortable: true, align: 'text-start' },
+        { name: "Tech Activity", selector: (row) => row.techActivity },
+        { name: "Non-Tech Activity", selector: (row) => row.nonTechActivity },
+        { name: "Action", selector: (row) => row.action, align: 'text-center' },
+    ];
+
+    const mappedData = () => {
         return distribution.map((item, index) => ({
             sn: index + 1,
-            projectCode: item.projectCode || "NA",
             employeeName: item.employeeName || "NA",
             aoOfficerName: item.aoOfficerName || "NA",
             roOfficerName: item.roOfficerName || "NA",
@@ -40,31 +39,37 @@ const DistributionComponent = () => {
 
             action: (
                 <>
-                  <Tooltip id="Tooltip" className='text-white' /> 
+                    <Tooltip id="Tooltip" className='text-white' />
                     <button
                         className="btn btn-sm btn-warning me-2"
                         data-tooltip-id="Tooltip"
                         data-tooltip-content="Edit"
                         data-tooltip-place="top"
-                         onClick={() => navigate("/hr-distribution-add", { state: { item } })}
+                        onClick={() => navigate("/hr-distribution-add", {
+                            state: { item, existingEmpIds: distribution
+                                    .filter(d => d.distributionId !== item.distributionId)
+                                    .map(d => d.empId)
+                            }
+                        })}
                     >
-                        <FaEdit className="fs-6" /> 
+                        <FaEdit className="fs-6" />
                     </button>
                 </>
             )
         }));
     };
 
-     const fetchDistributionList = async () => {
+    const fetchDistributionList = async () => {
         try {
             const response = await getDistribution();
+
             Setdistribution(response.data);
         } catch (error) {
             console.error("Error fetching employees:", error);
         }
     };
 
-  useEffect(() => {
+    useEffect(() => {
         fetchDistributionList();
     }, []);
 
@@ -75,7 +80,7 @@ const DistributionComponent = () => {
             <Navbar />
             <div>
                 <h3 className="fancy-heading mt-3">
-                         Distribution List
+                    Distribution List
                     <span className="underline-glow">
                         <span className="pulse-dot"></span>
                         <span className="pulse-dot"></span>
@@ -83,15 +88,18 @@ const DistributionComponent = () => {
                     </span>
                 </h3>
 
-                   <div id="card-body" className="p-2 mt-2">
+                <div id="card-body" className="p-2 mt-2">
                     <Datatable columns={columns} data={mappedData()} />
                 </div>
 
 
                 <div>
                     <button className="add"
-                           onClick={()=>navigate("/hr-distribution-add")}> ADD NEW
-                     </button>
+                        onClick={() => navigate("/hr-distribution-add", {
+                            state: { existingEmpIds: distribution.map(d => d.empId) }
+                        })}
+                    > ADD NEW
+                    </button>
                 </div>
 
             </div>
@@ -102,3 +110,4 @@ const DistributionComponent = () => {
 
 }
 export default DistributionComponent;
+

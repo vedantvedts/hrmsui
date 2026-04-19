@@ -134,3 +134,41 @@ export const getProjectList = async () => {
         throw error;
     }
 };
+
+
+export const getProjectByEmpId = async (empId) => {
+    try {
+        return (await axios.get(`${API_URL}api/master/project-byId`, {
+            headers: { 'Content-Type': 'application/json', ...authHeader() },
+            params: { 
+                empId 
+            }
+        })).data;
+    } catch (error) {
+        console.error("Error in getProjectByEmpId:", error);
+        throw error;
+    } 
+};
+
+
+export const getRoleMasterList = async () => {
+    try {
+        return (await axios.get(`${API_URL}api/master/project-role-master`, {
+            headers: { 'Content-Type': 'application/json', ...authHeader() },
+        },
+        )).data;
+    } catch (error) {
+        console.error('Error occurred in getRolemasterList():', error);
+        throw error;
+    }
+};
+
+
+export const addProjectRoleIds = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/master/add-project-role`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in add-project-role():', error);
+        throw error;
+    }
+};
