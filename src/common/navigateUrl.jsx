@@ -49,7 +49,8 @@ function AppRoutes() {
  useEffect(() => {
   const handleMessage = async (event) => {
     // 1. Security check
-    if (event.origin !== TMDS_URL) return;
+      const URLs = config.URLs;
+      if (!URLs.includes(event.origin)) return;
 
     if (event.data.user) {
       
