@@ -1,9 +1,11 @@
 import * as XLSX from "xlsx-js-style";
 import { saveAs } from "file-saver";
-import pdfMake from "pdfmake/build/pdfmake";
-import * as pdfFonts from "pdfmake/build/vfs_fonts";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import pdfFonts from "../../src/assets/fonts/vfs_fonts";
+import { getCurrentRegularDate } from "../component/utils/formatterUtils";
 
-pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
+
 
 const mapAlignment = (align) => {
   if (align === 'text-center') return 'center';
@@ -15,7 +17,7 @@ const mapAlignment = (align) => {
  * Utility to handle all table exports with premium enterprise styling.
  */
 export const ExportUtils = {
-  
+
   exportToExcel: (data, columns, fileName = "Export") => {
     // 1. Initialize worksheet with title
     const worksheet = XLSX.utils.aoa_to_sheet([[fileName.replace(/_/g, ' ')]]);
@@ -53,24 +55,25 @@ export const ExportUtils = {
             alignment: { horizontal: "center", vertical: "center" },
             border: { bottom: { style: "thin", color: { rgb: "000000" } } }
           };
-        } 
-        
+        }
+
         // B. Style Data Cells (Row index 3 and onwards)
         else if (R > 2) {
           const colDef = columns[C]; // Get column definition for this column index
-          
+
           worksheet[address].s = {
             font: { sz: 10, color: { rgb: "334155" } },
-            alignment: { 
+            alignment: {
               // Use your existing mapAlignment function!
-              horizontal: mapAlignment(colDef?.align), 
-              vertical: "center" 
+              horizontal: mapAlignment(colDef?.align),
+              vertical: "center",
+              wrapText: true
             },
             border: {
               bottom: { style: "thin", color: { rgb: "EDF2F7" } }
             }
           };
-          
+
           // Optional: Add zebra striping for premium look
           if (R % 2 === 0) {
             worksheet[address].s.fill = { fgColor: { rgb: "F8FAFC" } };
@@ -90,103 +93,148 @@ export const ExportUtils = {
     saveAs(finalData, `${fileName}.xlsx`);
   },
 
-  exportToPDF: (data, columns, fileName = "Export") => {
 
-    const tableHeader = columns.map((col) => ({
-        text: col.name,
-        style: "tableHeader",
-        alignment: 'center'
-    }));
+  exportToPDF: async (data, columns, fileName = "Export",) => {
+    const colCount = columns.length;
 
-    const tableBody = [];
-    data.forEach((row) => {
-        const rowCells = Object.values(row).map((val, i) => ({
-        text: val?.toString() || '',
-        style: 'tableCell',
-        alignment: mapAlignment(columns[i]?.align)
-        }));
-        
-        tableBody.push(rowCells);
-    });
-
-    const docDefinition = {
-      pageOrientation: "landscape",
-      pageSize:  columns.length <=10 ? "A4" : "A3",
-      pageMargins: [40, 60, 40, 60],
-
-      // PREMIUM FOOTER (From your project design)
-      footer: function (currentPage, pageCount) {
-        return {
-          margin: [40, 10, 40, 0],
-          stack: [
-            {
-              canvas: [
-                {
-                  type: "line",
-                  x1: 0, y1: 0,
-                  x2: 760, y2: 0, // Adjusted for landscape A4
-                  lineWidth: 1,
-                  lineColor: "#e2e8f0",
-                },
-              ],
-            },
-            {
-              columns: [
-                { 
-                  text: `Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 
-                  alignment: "left", 
-                  fontSize: 8, 
-                  color: "#808791", 
-                  margin: [0, 5, 0, 0] 
-                },
-                { 
-                  text: `Page ${currentPage} of ${pageCount}`, 
-                  alignment: "right", 
-                  fontSize: 8, 
-                  color: "#808791", 
-                  margin: [0, 5, 0, 0] 
-                }
-              ]
-            }
-          ]
-        };
-      },
-
-      content: [
-        { text: `${fileName.replace(/_/g, ' ')}`, style: "title" },
-        {
-          style: "tableStyle",
-          table: {
-            headerRows: 1,
-            widths: columns.map((col) => col.width || "auto"),
-            body: [tableHeader, ...tableBody],
-          },
-          layout: {
-            fillColor: (rowIndex) => (rowIndex === 0 ? "#0163d6" : (rowIndex % 2 === 0 ? "#f8fafc" : null)),
-            hLineColor: () => "#e2e8f0",
-            vLineColor: () => "#e2e8f0",
-            hLineWidth: () => 0.5,
-            vLineWidth: () => 0.5,
-            paddingLeft: () => 8,
-            paddingRight: () => 8,
-            paddingTop: () => 6,
-            paddingBottom: () => 6,
-          },
-        },
-      ],
-
-      styles: {
-        title: { fontSize: 18, bold: true, color: "#0163d6", margin: [0, 0, 0, 5] },
-        filterContent: { fontSize: 9, color: "#64748b", italics: true },
-        tableHeader: { bold: true, fontSize: 10, color: "#ffffff" },
-        tableCell: { fontSize: 9, color: "#334155" },
-        tableStyle: { margin: [0, 5, 0, 5] },
-      },
+    const getPageConfig = (n) => {
+      if (n <= 5) return { orientation: "portrait", format: "a4" };
+      if (n <= 8) return { orientation: "landscape", format: "a4" };
+      if (n <= 12) return { orientation: "landscape", format: "a3" };
+      if (n <= 18) return { orientation: "landscape", format: "a2" };
+      if (n <= 24) return { orientation: "landscape", format: "a1" };
+      return { orientation: "landscape", format: "a0" };
     };
 
-    pdfMake.createPdf(docDefinition).open();
-  },
+    const { orientation, format } = getPageConfig(colCount);
+    const doc = new jsPDF({ orientation, format, unit: "pt" });
 
+    if (pdfFonts) {
+      doc.addFileToVFS('arial.ttf', pdfFonts['arial.ttf']);
+      doc.addFileToVFS('arialbd.ttf', pdfFonts['arialbd.ttf']);
+
+      doc.addFont('arial.ttf', 'Arial', 'normal');
+      doc.addFont('arialbd.ttf', 'Arial', 'bold');
+    }
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 40;
+    const usableWidth = pageWidth - margin * 2;
+
+    // ── Font size scales down for dense tables ─────────────────────────────────
+    const fontSize = colCount > 18 ? 6 : colCount > 12 ? 7 : colCount > 8 ? 8 : 9;
+    const headFontSize = colCount > 18 ? 6 : colCount > 12 ? 7 : colCount > 8 ? 8 : 10;
+    const cellPadding = colCount > 12 ? 4 : 6;
+
+    // ── Title ──────────────────────────────────────────────────────────────────
+    const titleText = fileName.replace(/_/g, ' ');
+    doc.setFontSize(18);
+    doc.setTextColor("#0163d6");
+    doc.setFont("Arial", "bold");
+
+    const titleLines = doc.splitTextToSize(titleText, usableWidth);
+    doc.text(titleLines, margin, margin + 16);
+
+    const titleLineHeight = 22;
+    const titleBottom = margin + 16 + titleLines.length * titleLineHeight;
+    const tableStartY = titleBottom + 2;
+
+    // ── Table data ─────────────────────────────────────────────────────────────
+    const head = [columns.map((col) => col.name)];
+    const body = data.length > 0 ? data.map((row) =>
+      Object.values(row).map((val) => val?.toString() ?? "")
+    ) : [[{ content: "There are no records to display", colSpan: columns.length }]];
+
+    // ── Column styles: alignment ONLY, no cellWidth ────────────────────────────
+    // Let autoTable measure content naturally, then we scale to fit the page
+    const columnStyles = {};
+    columns.forEach((col, i) => {
+      columnStyles[i] = { halign: mapAlignment(col.align) };
+    });
+
+    // ── First pass: measure natural content widths ─────────────────────────────
+    // We use autoTable's columnWidth calculation via a dry run approach:
+    // Provide minCellWidth so no column collapses, tableWidth "wrap" to get natural sizes
+    const MIN_COL_WIDTH = 30; // pt — absolute minimum per column
+
+    // After autoTable runs, it exposes the final column widths via the table object.
+    // We hook into didParseCell to do nothing, then scale in willDrawCell if needed.
+    // Simpler: use tableWidth as usableWidth + autoTable's "auto" content fitting.
+
+    autoTable(doc, {
+      head,
+      body,
+      startY: tableStartY,
+      margin: { left: margin, right: margin, bottom: margin + 20 },
+      tableWidth: usableWidth,   // hard-constrain to page
+      columnStyles,
+
+      // KEY: let autoTable distribute widths by content, then scale to fit
+      // "auto" means: size each column to its content, then scale all proportionally to fit tableWidth
+      // This is what actually fixes the squished columns issue
+      styles: {
+        fontSize,
+        cellPadding,
+        textColor: "#334155",
+        lineColor: "#e2e8f0",
+        lineWidth: 0.5,
+        overflow: "linebreak",
+        minCellWidth: MIN_COL_WIDTH,
+      },
+
+      headStyles: {
+        fillColor: "#0163d6",
+        textColor: "#ffffff",
+        fontStyle: "bold",
+        fontSize: headFontSize,
+        halign: "center",
+        minCellWidth: MIN_COL_WIDTH,
+      },
+
+      alternateRowStyles: {
+        fillColor: "#f8fafc",
+      },
+
+      // autoTable by default distributes columns proportionally when tableWidth is set.
+      // To make it content-aware, we override column widths after the first internal layout pass.
+      didParseCell: (hookData) => {
+        // Remove any forced cellWidth so autoTable uses content-based sizing
+        delete hookData.column.width;
+      },
+
+      didDrawPage: ({ pageNumber }) => {
+        const pageCount = doc.internal.getNumberOfPages();
+        const footerY = pageHeight - margin + 10;
+        const timestamp = `Generated on: ${getCurrentRegularDate()} ${new Date().toLocaleTimeString()}`;
+
+        doc.setDrawColor("#e2e8f0");
+        doc.setLineWidth(0.5);
+        doc.line(margin, footerY - 8, pageWidth - margin, footerY - 8);
+
+        doc.setFontSize(8);
+        doc.setTextColor("#808791");
+        doc.setFont("Arial", "normal");
+        doc.text(timestamp, margin, footerY + 4);
+        doc.text(
+          `Page ${pageNumber} of ${pageCount}`,
+          pageWidth - margin,
+          footerY + 4,
+          { align: "right" }
+        );
+      },
+    });
+
+    doc.setProperties({
+      title: `${fileName.replace(/_/g, ' ')}`,
+      author: "HRMS",
+    });
+
+    // doc.save(`${fileName}.pdf`);
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  },
   // exportToCSV: (data, columns, fileName = "Export") => {
   //   const csvContent = [
   //     columns.map(col => col.name).join(","), 

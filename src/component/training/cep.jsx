@@ -7,9 +7,12 @@ import { format } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { usePermission } from '../../common/usePermission';
 
 
 const CepComponent = () => {
+
+    const { canView, canAdd, canEdit, canDelete } = usePermission("In-House CEP");
 
     const navigate = useNavigate();
     const [cep, Setcep] = useState([]);
@@ -53,7 +56,8 @@ const CepComponent = () => {
             align: "text-end",
         },
         { name: " Comment ", selector: (row) => row.comments, sortable: true, align: 'text-start' },
-        { name: "Action", selector: (row) => row.action, align: 'text-center' },
+        ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
+
     ];
 
     const mappedData = () => {
@@ -91,7 +95,7 @@ const CepComponent = () => {
             <div>
 
                 <h3 className="fancy-heading mt-3">
-                    CEP List
+                    In-House CEP List
                     <span className="underline-glow">
                         <span className="pulse-dot"></span>
                         <span className="pulse-dot"></span>
@@ -101,9 +105,12 @@ const CepComponent = () => {
                 <div id="card-body" className="p-2 mt-2">
                     <Datatable columns={columns} data={mappedData()} />
                 </div>
-                <div>
-                    <button className="add" onClick={() => navigate("/cep-add")}> ADD NEW</button>
-                </div>
+
+                {canAdd &&
+                    <div>
+                        <button className="add" onClick={() => navigate("/cep-add")}> ADD NEW</button>
+                    </div>
+                }
 
             </div>
 

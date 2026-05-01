@@ -8,13 +8,16 @@ import "react-datepicker/dist/react-datepicker.css";
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import AppRoutes from './common/navigateUrl';
 import { RoleAccessProvider } from './common/RoleAccessContext';
+import IdleTimeoutHandler from './common/IdleTimeoutHandler';
 
 function App() {
   return (
     <div className="App hrms-font">
-      <RoleAccessProvider>
-        <AppRoutes />
-      </RoleAccessProvider>
+      <IdleTimeoutHandler timeout={3600000}>
+        <RoleAccessProvider>
+          <AppRoutes />
+        </RoleAccessProvider>
+      </IdleTimeoutHandler>
     </div>
   );
 }

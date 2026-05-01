@@ -90,46 +90,46 @@ const Calendar = () => {
         coverFile: null
     });
 
-   const validationSchema = Yup.object().shape({
-    organizerId: Yup.string().required("Organizer is required"),
+    const validationSchema = Yup.object().shape({
+        organizerId: Yup.string().required("Organizer is required"),
 
-    file: Yup.mixed().when("isEdit", {
-        is: false, 
-        then: (schema) =>
-            schema
-                .required("File is required")
-                .test("fileType", "Unsupported File Format", (value) => {
-                    if (!value) return false;
-                    return ["application/pdf", "image/jpeg", "image/png"].includes(value.type);
-                })
-                .test("fileSize", "File too large (Max 5MB)", (value) => {
-                    if (!value) return false;
-                    return value.size <= 5 * 1024 * 1024;
-                }),
+        file: Yup.mixed().when("isEdit", {
+            is: false,
+            then: (schema) =>
+                schema
+                    .required("File is required")
+                    .test("fileType", "Unsupported File Format", (value) => {
+                        if (!value) return false;
+                        return ["application/pdf", "image/jpeg", "image/png"].includes(value.type);
+                    })
+                    .test("fileSize", "File too large (Max 5MB)", (value) => {
+                        if (!value) return false;
+                        return value.size <= 5 * 1024 * 1024;
+                    }),
 
-        otherwise: (schema) =>
-            schema
-                .nullable()
-                .notRequired()
-                .test("fileType", "Unsupported File Format", (value) => {
-                    if (!value) return true; // allow empty in edit
-                    return ["application/pdf", "image/jpeg", "image/png"].includes(value.type);
-                })
-                .test("fileSize", "File too large (Max 5MB)", (value) => {
-                    if (!value) return true;
-                    return value.size <= 5 * 1024 * 1024;
-                })
-    }),
+            otherwise: (schema) =>
+                schema
+                    .nullable()
+                    .notRequired()
+                    .test("fileType", "Unsupported File Format", (value) => {
+                        if (!value) return true; // allow empty in edit
+                        return ["application/pdf", "image/jpeg", "image/png"].includes(value.type);
+                    })
+                    .test("fileSize", "File too large (Max 5MB)", (value) => {
+                        if (!value) return true;
+                        return value.size <= 5 * 1024 * 1024;
+                    })
+        }),
 
-    coverFile: Yup.mixed().notRequired()
-});
+        coverFile: Yup.mixed().notRequired()
+    });
 
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
         { name: "Organizer", selector: (row) => row.agency, sortable: true, align: 'text-center' },
         { name: "Uploaded Date", selector: (row) => row.uploadDate, sortable: true, align: 'text-center' },
         { name: "File", selector: (row) => row.file, sortable: true, align: 'text-center' },
-        { name: "Action", selector: (row) => row.action, align: 'text-center' },
+        ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
     ];
 
     const mappedData = () => {
@@ -251,7 +251,7 @@ const Calendar = () => {
                 year: selectedYear,
             }
 
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }
@@ -367,10 +367,10 @@ const Calendar = () => {
                             <div className="modal-content">
                                 <div className="modal-header custom-modal-header">
                                     <h5 className="modal-title">
-                                       <span className="cs-head-text">
-                                        {isEdit ? "Edit Calendar" : "Add Calendar"}
-                                       </span>
-                                        </h5>
+                                        <span className="cs-head-text">
+                                            {isEdit ? "Edit Calendar" : "Add Calendar"}
+                                        </span>
+                                    </h5>
                                     <button type="button" className="btn-close" onClick={closeModal}></button>
                                 </div>
                                 <div className="modal-body custom-modal-body">
@@ -407,7 +407,7 @@ const Calendar = () => {
                                                                 onClick={() => handleDownload(editData.calendarId, "CF")}
                                                             >
                                                                 <FaDownload className="me-1" />
-                                                               
+
                                                             </span>
 
                                                         )}
@@ -425,7 +425,7 @@ const Calendar = () => {
                                                                 onClick={() => handleDownload(editData.calendarId, "CF")}
                                                             >
                                                                 <FaDownload className="me-1" />
-                                                              
+
                                                             </span>
 
                                                         )}
@@ -438,7 +438,7 @@ const Calendar = () => {
                                                     <button
                                                         type="submit"
                                                         className={isEdit ? "update" : "submit"}
-                                                         disabled={isSubmitting || !isValid}
+                                                        disabled={isSubmitting || !isValid}
                                                     >
                                                         {isEdit ? "UPDATE" : "SUBMIT"}
                                                     </button>
@@ -455,7 +455,7 @@ const Calendar = () => {
                                         )}
                                     </Formik>
                                 </div>
-                            </div>   
+                            </div>
                         </div>
                     </div>
                 </>

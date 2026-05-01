@@ -18,7 +18,7 @@ const AddEditCepComponent = () => {
   const [divisionList, setDivisionList] = useState([]);
 
   const divisionOptions = divisionList.map((div) => ({
-    label: div.divisionCode,
+    label: div.divisionShortName || div.divisionName,
     value: div.divisionId,
   }));
 
@@ -94,7 +94,7 @@ const AddEditCepComponent = () => {
       };
 
       const confirm = await AlertConfirmation({
-        title: "Are you sure!",
+        title: "Are you sure to submit!",
         message: "",
       });
 
@@ -178,7 +178,7 @@ const AddEditCepComponent = () => {
     <div>
       <Navbar />
       <h3 className="fancy-heading mt-3">
-        {isEdit ? "Edit CEP" : "Add CEP"}
+        {isEdit ? "In-House CEP" : "In-House CEP"}
         <span className="underline-glow">
           <span className="pulse-dot"></span>
           <span className="pulse-dot"></span>

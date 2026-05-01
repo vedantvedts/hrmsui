@@ -14,6 +14,12 @@ const REPORTS_LIST = [
     { id: "5", name: "Details of Sponsorship to Higher Degree M.Tech" },
     { id: "6", name: "Details of Sponsorship to Higher Degree Ph.D" },
     { id: "7", name: "HR Distribution Project wsie Tech/Non Tech Deployment of DRDS & DRTC" },
+    { id: "8", name: "Annual Training Report" },
+    { id: "9", name: "Detailed of Research Paper in International Journals" },
+    { id: "10", name: "Detailed of Research Paper in Seminars/ Symposia/ Conferences" },
+    { id: "11", name: "Budget Expenditure" },
+    { id: "12", name: "Gender Budgeting" },
+    { id: "13", name: "Training of SC/ST Employees" },
 ];
 
 const AllReportsTemplate = () => {

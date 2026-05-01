@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
 import { BiSolidExit } from "react-icons/bi";
-import { FaHome, FaHSquare, FaUserClock } from "react-icons/fa";
+import { FaEnvelopeOpenText, FaEye, FaHome, FaHSquare, FaProjectDiagram, FaRupeeSign, FaTimes, FaUserClock, FaUsersCog, FaUserTie } from "react-icons/fa";
 import { FaAddressCard, FaBell, FaCaretDown } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import "./navbar.css";
 import { getHeaderModuleDetailList, getHeaderModuleList, getNotifiCount, getNotifiList, updateNotification } from "../../service/admin.service";
 import * as FaIcons from "react-icons/fa6";
-
+import { checkUserProjectAccess, getReactAppUrls } from "../../service/master.service";
+import Swal from "sweetalert2";
+import { BsFileEarmarkText, BsFillBoxSeamFill } from "react-icons/bs";
+import { MdOutlineFactCheck } from "react-icons/md";
+import { IoAppsSharp } from "react-icons/io5";
+import { Tooltip } from "bootstrap";
+import { LuLayoutGrid } from "react-icons/lu";
+import config from "../../environment/config"
+import { logout } from "../../service/auth.service";
 
 const Navbar = () => {
 
@@ -20,6 +28,20 @@ const Navbar = () => {
     const empName = localStorage.getItem("empName");
     const designationCode = localStorage.getItem("designationCode");
     const roleId = localStorage.getItem("roleId");
+    const [appUrls, setAppUrls] = useState({});
+    const [isLauncherOpen, setIsLauncherOpen] = useState(false);
+    const [showAll, setShowAll] = useState(false);
+
+    const handleShowAll = () => {
+        setShowAll(true);
+    };
+
+    const handleClose = () => {
+        setShowAll(false);
+    };
+
+
+    const LABCODE = config.LABCODE;
 
     useEffect(() => {
         if (roleId) {
@@ -29,8 +51,9 @@ const Navbar = () => {
     }, [roleId]);
 
 
-    const handleLogout = (e) => {
+    const handleLogout = async (e) => {
         e.preventDefault();
+        await logout("L");
         localStorage.clear();
         navigate("/login");
     };
@@ -85,6 +108,106 @@ const Navbar = () => {
         return `${cleanTitle} ${cleanName}`.trim() + cleanDesignation;
     };
 
+
+    useEffect(() => {
+        fetchAppUrls();
+    }, []);
+
+    const fetchAppUrls = async () => {
+        try {
+            const urls = await getReactAppUrls();
+            const urlMap = {};
+            urls.forEach(app => {
+                if (app.isActive === 1) {
+                    urlMap[app.appCode] = app.appUrl;
+                }
+            });
+            setAppUrls(urlMap);
+        } catch (error) {
+            console.error("Failed to fetch app URLs:", error);
+        }
+    };
+
+    const roleName = localStorage.getItem("roleName");
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    const encryptedUser = btoa(user.username);
+
+    const apps = [
+        { code: 'PMS', name: "Project Management System", type: 'jsp', icon: <FaProjectDiagram />, color: '#2196f3' },
+        { code: 'DMS', name: "Dak Management System", launchpath: 'dashboard', icon: <FaEnvelopeOpenText />, action: 'open', color: '#0d6efd' },
+        { code: 'IBAS', name: "Integrated Budget Accounting System", launchpath: 'dashboard', icon: <FaRupeeSign />, action: 'open', color: '#4caf50' },
+        { code: 'SIS', name: "Stores Inventory System", type: 'jsp', icon: <BsFillBoxSeamFill />, color: '#17a2b8' },
+        { code: 'AMS', name: "Audit Management System", launchpath: 'dashboard', icon: <MdOutlineFactCheck />, action: 'open', color: '#dc3545' },
+        // { code: 'HRMS', name: "Human Resource Management System", launchpath: 'dashboard', icon: <FaUsersCog />, action: 'open', color: '#20c997' },
+        { code: 'EMS', name: "Employee Management System", launchpath: 'dashboard', icon: <FaUserTie />, action: 'open', color: '#495057' },
+        { code: 'TMDS', name: "Top Management Dashboard System", launchpath: roleName === "ROLE_ADMIN" ? 'maindashboard' : 'userdashboard', icon: <IoAppsSharp />, action: 'open', color: '#0d47a1' },
+        { code: 'PFTS', name: "Procurement File Tracking System", launchpath: 'dashboard', icon: <BsFileEarmarkText />, action: 'open', color: '#fd7e14' },
+    ].map(app => ({
+        ...app,
+        url: (app.type === 'jsp' ? (appUrls[app.code] + `/TMDS?api_key=VTS_${encryptedUser}`) : appUrls[app.code])
+    }));
+
+    const handleAppLaunch = async (app) => {
+        setIsLauncherOpen(false);
+
+        const hasAccess = await checkUserProjectAccess(app.code);
+        if (!hasAccess) {
+            Swal.fire({
+                title: 'Access Denied',
+                text: `You do not have access to ${app.code} application.`,
+                icon: 'error',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Okay',
+                footer: '<span>Contact System Admin if you need access.</span>',
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            });
+            return;
+        }
+
+        const targetUrl = app.url;
+
+        if (app.action === 'open') {
+            const userData = localStorage.getItem("user");
+            if (!userData) return;
+
+            const appWindow = window.open(`${targetUrl}/${app.launchpath}?${app.code.toLowerCase()}=true`, '_blank');
+
+            let count = 0;
+            const checkInterval = setInterval(() => {
+                if (appWindow && count < 1) {
+                    appWindow.postMessage(
+                        { type: "LOGIN_SUCCESS", user: JSON.parse(userData) }, targetUrl);
+                    count++;
+                } else {
+                    clearInterval(checkInterval);
+                }
+            }, 1000);
+        } else if (targetUrl === '/under-development') {
+            window.location.href = targetUrl;
+        } else {
+            window.open(app.url, '_blank', 'noopener,noreferrer');
+        }
+    };
+
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            // Close if the click is not on the launcher button or the dropdown
+            if (isLauncherOpen && !event.target.closest(`.launcher-btn`) && !event.target.closest(`.app-launcher-dropdown`)) {
+                setIsLauncherOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isLauncherOpen]);
+
     return (
         <nav className="navbar sticky-top navbar-expand-lg navbar-dark bg-dark-new nav-ams">
             <div className="row w-100">
@@ -110,6 +233,45 @@ const Navbar = () => {
                     </div>
                     <div className="col-md-8 d-flex justify-content-end">
                         <ul className="navbar-nav ms-auto">
+
+
+                            {LABCODE?.toLowerCase() === 'cair' && (
+                                <li
+                                    className="nav-item position-relative"
+                                    style={{ listStyle: "none" }}
+                                    // onMouseEnter={() => setIsLauncherOpen(true)}
+                                    // onMouseLeave={() => setIsLauncherOpen(false)}
+                                    onClick={() => setIsLauncherOpen(prev => !prev)}
+                                >
+                                    <button className="nav-link border-0 " style={{ color: "white" }}>
+                                        <LuLayoutGrid size={22} />
+                                    </button>
+
+                                    {isLauncherOpen && (
+                                        <div className="app-launcher-dropdown">
+                                            <div className="app-grid">
+                                                {apps.map(app => (
+                                                    <div
+                                                        key={app.code}
+                                                        className="app-item"
+                                                        onClick={() => handleAppLaunch(app)}
+                                                        data-tooltip-id="Tooltip"
+                                                        data-tooltip-content={app.name}
+                                                    >
+                                                        <div className="app-icon" style={{ color: app.color }}>
+                                                            {app.icon}
+                                                        </div>
+                                                        <span className="app-name">{app.code}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* <Tooltip id="Tooltip" className="text-white tooltipName" /> */}
+                                        </div>
+                                    )}
+                                </li>
+                            )}
+
                             <li className="nav-item dropdown">
                                 <a href="/dashboard" className="nav-link nav-animate">
                                     <FaHome className="icon-name" />Home
@@ -224,9 +386,9 @@ const Navbar = () => {
 
                                     {notifiList.length > 0 && (
                                         <li className="dropdown-footer text-center py-2 bg-white sticky-bottom z-10 border-top">
-                                            <a className="dropdown-item fs-14" href="/notification-list" >
+                                            <button className="btn btn-link fs-14" onClick={handleShowAll}>
                                                 Show All Alerts
-                                            </a>
+                                            </button>
                                         </li>
                                     )}
 
@@ -239,6 +401,84 @@ const Navbar = () => {
                                 </a>
                             </li>
                         </ul>
+
+                        {showAll && (
+                            <>
+                                <div className="notification-backdrop" onClick={handleClose}></div>
+
+                                <div className="notification-panel">
+                                    {/* Header Section */}
+                                    <div className="panel-header">
+                                        <div className="header-title">
+                                            <FaBell className="header-icon" />
+                                            <h5>Notifications</h5>
+                                            <span className="count-pill">{notifiList.length}</span>
+                                        </div>
+                                        <button className="close-panel-btn" onClick={handleClose} aria-label="Close">
+                                            <FaTimes />
+                                        </button>
+                                    </div>
+
+                                    {/* Body Section */}
+                                    <div className="panel-body">
+                                        {notifiList.length === 0 ? (
+                                            <div className="empty-state">
+                                                <p>No notifications available</p>
+                                            </div>
+                                        ) : (
+                                            notifiList.map((notif) => (
+                                                <div key={notif.notificationId} className="notification-card">
+                                                    {/* Left Side: Avatar */}
+                                                    <div className="notification-left">
+                                                        <div className="avatar-circle">
+                                                            {notif.empName
+                                                                ?.split(' ')
+                                                                .filter(word => word.length > 0)[1]
+                                                                ?.charAt(0)
+                                                                ?.toUpperCase()}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Right Side: Content */}
+                                                    <div className="notification-content">
+                                                        <div className="content-top">
+                                                            <span className="emp-name">{notif.empName}</span>
+                                                        </div>
+
+                                                        <p className="notification-message">
+                                                            {notif.notificationMessage}
+                                                        </p>
+
+                                                        {/* Footer Row: Button (Left) and Date (Right) */}
+                                                        <div className="notification-footer-row">
+                                                            {notif.notificationUrl ? (
+                                                                <button
+                                                                    onClick={(event) => gotoNoti(event, notif)}
+                                                                    className="view-link-btn"
+                                                                >
+                                                                    <FaEye /> View Details
+                                                                </button>
+                                                            ) : (
+                                                                <div className="spacer"></div>
+                                                            )}
+                                                            <span className="timestamp">{notif.notificationDate}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    {/* Bottom Footer */}
+                                    <div className="panel-footer-main">
+                                        <button onClick={handleClose} className="footer-close-btn">
+                                            Close Panel
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
                     </div>
                 </div>
             </div>

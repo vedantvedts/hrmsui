@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from './SmartDatatable.module.css';
 import { FaRegFilePdf, FaRegFileExcel } from "react-icons/fa";
@@ -6,11 +6,15 @@ import { FaRegFilePdf, FaRegFileExcel } from "react-icons/fa";
 import { ExportUtils } from './exportUtils';
 
 
-const SmartDatatable = ({ columns, data, innerColumns, highlightedRowId = null, footer = null, fileName = "Exported_Data" }) => {
+const SmartDatatable = ({ reportId, columns, data, innerColumns, highlightedRowId = null, footer = null, fileName = "Exported_Data" }) => {
+
+
   const [filterText, setFilterText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
+  const columnDropdownRef = useRef(null);
 
   // NEW STATE: Manage visibility of columns
   const [visibleColumnNames, setVisibleColumnNames] = useState(
@@ -25,6 +29,19 @@ const SmartDatatable = ({ columns, data, innerColumns, highlightedRowId = null, 
         : [...prev, columnName]
     );
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (columnDropdownRef.current && !columnDropdownRef.current.contains(event.target)) {
+        setIsColumnDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Filter columns based on visibility state
   const visibleColumns = useMemo(() => {
@@ -65,19 +82,32 @@ const SmartDatatable = ({ columns, data, innerColumns, highlightedRowId = null, 
   // --- EXPORT FUNCTIONS ---
 
   const getExportData = () => {
+
     return filteredData.map(row => {
       const rowData = {};
+
       visibleColumns.forEach(col => {
-        rowData[col.name] = col.selector(row);
+        if (col.name === "Project") {
+          rowData[col.name] =
+            row.roleDtoList?.map(r => r.projectCode).join("\n");
+        }
+        else if (col.name === "Appointment") {
+          rowData[col.name] =
+            row.roleDtoList?.map(r => r.roleName).join("\n");
+        }
+        else {
+          rowData[col.name] = col.selector(row);
+        }
       });
+
       return rowData;
     });
   };
 
- const handleExport = (type) => {
+  const handleExport = (type) => {
     const exportData = getExportData();
 
-    switch(type) {
+    switch (type) {
       case 'excel':
         ExportUtils.exportToExcel(exportData, visibleColumns, fileName);
         break;
@@ -164,7 +194,7 @@ const SmartDatatable = ({ columns, data, innerColumns, highlightedRowId = null, 
           <select id="entries-per-page" className="form-select form-select-sm" value={itemsPerPage} onChange={handleItemsPerPageChange} style={{ width: 'auto' }}>
             {[8, 10, 20, 30, 40, 50, 100, 500].map(val => <option key={val} value={val}>{val}</option>)}
           </select>
-          
+
           {/* EXPORT BUTTONS */}
           <div className={styles.exportWrapper}>
             <span className={styles.exportLabel}>EXPORT AS:</span>
@@ -177,27 +207,33 @@ const SmartDatatable = ({ columns, data, innerColumns, highlightedRowId = null, 
                 <FaRegFileExcel className={`${styles.exportIcon}`} />
                 Excel
               </button>
-              {/* <button className={`btn ${styles.exportBtn} ${styles.csvBtn}`} onClick={() => handleExport('csv')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                CSV
-              </button> */}
             </div>
           </div>
         </div>
 
         <div className={`d-flex ${styles.gap2}`}>
           {/* COLUMN VISIBILITY DROPDOWN */}
-          <div className="dropdown">
-            <button className="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="columnToggle" data-bs-toggle="dropdown" aria-expanded="false">
+          <div className="dropdown" ref={columnDropdownRef}>
+            <button
+              className="btn btn-sm btn-outline-primary dropdown-toggle"
+              type="button"
+              id="columnToggle"
+              aria-haspopup="true"
+              aria-expanded={isColumnDropdownOpen}
+              onClick={() => setIsColumnDropdownOpen(prev => !prev)}
+            >
               Columns
             </button>
-            <ul className={`dropdown-menu dropdown-menu-end p-2 ${styles.dropdownMenu}`} aria-labelledby="columnToggle">
+            <ul
+              className={`dropdown-menu dropdown-menu-end p-2 ${styles.dropdownMenu} ${isColumnDropdownOpen ? 'show' : ''}`}
+              aria-labelledby="columnToggle"
+            >
               {columns.map(column => (
                 <li key={column.name} className="dropdown-item-text">
                   <div className="form-check">
-                    <input 
-                      className="form-check-input" 
-                      type="checkbox" 
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
                       id={`col-${column.name}`}
                       checked={visibleColumnNames.includes(column.name)}
                       onChange={() => toggleColumn(column.name)}
@@ -269,11 +305,11 @@ const SmartDatatable = ({ columns, data, innerColumns, highlightedRowId = null, 
                               {row.nestedData.map((nestedRow, nIdx) => (
                                 <tr key={nIdx} className={styles.dataTableBorderedRow}>
                                   {innerColumns.map((innerColumn, cIdx) => (
-                                    <td 
-                                      key={cIdx} 
-                                      className={innerColumn.align || ''} 
+                                    <td
+                                      key={cIdx}
+                                      className={innerColumn.align || ''}
                                       rowSpan={innerColumn.rowSpan && nestedRow.rowSpan > 0 ? nestedRow.rowSpan : undefined}
-                                      style={{ 
+                                      style={{
                                         backgroundColor: innerColumn.bgColor || 'inherit',
                                         display: (innerColumn.rowSpan && (!nestedRow.rowSpan || nestedRow.rowSpan <= 0)) ? 'none' : 'table-cell'
                                       }}

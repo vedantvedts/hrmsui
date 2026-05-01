@@ -193,7 +193,7 @@ const SignAuthority = () => {
                 validUpto: values.validUpto ? format(values.validUpto, "yyyy-MM-dd") : null,
                 serialNo: values.serialNo,
             }
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }

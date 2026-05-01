@@ -3,7 +3,7 @@ import Datatable from "../../datatable/Datatable";
 import Navbar from "../navbar/Navbar";
 import { addEligible, addProgram, editProgram, getAgencies, getCourseList, getCourseTypeList, getEligibilities } from "../../service/training.service";
 import Swal from "sweetalert2";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import DatePicker from "react-datepicker";
@@ -51,6 +51,7 @@ const ProgramList = () => {
         onlineRegistrationFee: null,
         noOfNomination: 0,
         venue: "",
+        isFree: "Y"
     };
 
     const [initialValues, setInitialValues] = useState(programFeilds);
@@ -122,6 +123,7 @@ const ProgramList = () => {
 
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
+        { name: "Course Type", selector: (row) => row.courseType, sortable: true, align: 'text-center' },
         { name: "Course Code", selector: (row) => row.courseCode, sortable: true, align: 'text-center' },
         { name: "Course Name", selector: (row) => row.courseName, sortable: true, align: 'text-left' },
         { name: "Organizer", selector: (row) => row.organizer, sortable: true, align: 'text-left' },
@@ -137,6 +139,7 @@ const ProgramList = () => {
     const mappedData = () => {
         return filterOrganizeList.map((item, index) => ({
             sn: index + 1,
+            courseType: item.courseType || "-",
             courseCode: item.courseCode || "NA",
             courseName: item.courseName || "-",
             organizer: item.organizer || "-",
@@ -179,13 +182,15 @@ const ProgramList = () => {
             onlineRegistrationFee: item?.onlineRegistrationFee || null,
             noOfNomination: item?.noOfNomination || 0,
             venue: item?.venue || "",
+            isFree: item?.offlineRegistrationFee === 0 && (item?.onlineRegistrationFee === 0 || item?.onlineRegistrationFee === null) ? "Y" : "N",
         });
         setShowProgramModal(true);
 
     }
 
     const programSchema = Yup.object().shape({
-        courseName: Yup.string().trim().required("Course Name is required"),
+        courseName: Yup.string().trim().required("Course Name is required")
+            .max(250, "Course Name cannot exceed 250 characters"),
         courseCode: Yup.string().trim().notRequired(),
         courseTypeId: Yup.string().required("Course Type is required"),
         courseLevel: Yup.string().required("Course Preference is required"),
@@ -210,7 +215,8 @@ const ProgramList = () => {
         noOfNomination: Yup.string()
             .required("No of Nomination is required")
             .min(0, "Nomination cannot be negative"),
-        venue: Yup.string().trim().required("Venue is required"),
+        venue: Yup.string().trim().required("Venue is required")
+            .max(250, "Venue cannot exceed 250 characters")
     });
 
     const eligibilityOptions = [
@@ -254,7 +260,7 @@ const ProgramList = () => {
                 toDate: format(new Date(values.toDate), "yyyy-MM-dd"),
             }
 
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }
@@ -310,6 +316,9 @@ const ProgramList = () => {
         if (!eligibilityInput.trim()) {
             setEligibilityError("Eligibility Name is required");
             return false;
+        } else if (eligibilityInput.length > 100) {
+            setEligibilityError("Eligibility Name cannot exceed 100 characters");
+            return false;
         }
         setEligibilityError("");
         return true;
@@ -318,7 +327,7 @@ const ProgramList = () => {
     const handleEligibleSubmit = async () => {
         if (!validateEligibility()) return;
         try {
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) return;
 
             const response = await addEligible({ eligibilityName: eligibilityInput });
@@ -573,28 +582,55 @@ const ProgramList = () => {
                                                         </div>
                                                     )}
 
+                                                    <div className="col-md-6 mt-4">
+                                                        <span className="form-label me-3">
+                                                            Is this course free?
+                                                        </span>
 
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Offline RE Fee (₹)
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Field className="form-control" name="offlineRegistrationFee" type="number" />
-                                                        <ErrorMessage name="offlineRegistrationFee" component="div" className="invalid-msg" />
+                                                        <div className="btn-group bg-light rounded-pill border ms-4" role="group">
+                                                            <button
+                                                                type="button"
+                                                                className={`btn rounded-pill px-4 py-2 transition-all ${values.isFree === "Y" ? "btn-success shadow-sm" : "btn-light text-muted"
+                                                                    }`}
+                                                                onClick={() => {
+                                                                    setFieldValue("isFree", "Y");
+                                                                    setFieldValue("offlineRegistrationFee", 0);
+                                                                    setFieldValue("onlineRegistrationFee", null);
+                                                                }}
+                                                            >
+                                                                Yes
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className={`btn rounded-pill px-4 py-2 transition-all ${values.isFree === "N" ? "btn-danger shadow-sm" : "btn-light text-muted"
+                                                                    }`}
+                                                                onClick={() => setFieldValue("isFree", "N")}
+                                                            >
+                                                                No
+                                                            </button>
+                                                        </div>
                                                     </div>
 
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Online RE Fee (₹)</label>
-                                                        <Field className="form-control" name="onlineRegistrationFee" type="number" />
-                                                        <ErrorMessage name="onlineRegistrationFee" component="div" className="invalid-msg" />
-                                                    </div>
+                                                    {values.isFree === "N" &&
+                                                        <>
+                                                            <div className="col-md-3 mb-3">
+                                                                <label className="form-label">Offline RE Fee (₹)
+                                                                    <span className="text-danger">*</span>
+                                                                </label>
+                                                                <Field className="form-control" name="offlineRegistrationFee" type="number" />
+                                                                <ErrorMessage name="offlineRegistrationFee" component="div" className="invalid-msg" />
+                                                            </div>
 
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">No of Nomination</label>
-                                                        <Field className="form-control" name="noOfNomination" type="number" />
-                                                        <ErrorMessage name="noOfNomination" component="div" className="invalid-msg" />
-                                                    </div>
+                                                            <div className="col-md-3 mb-3">
+                                                                <label className="form-label">Online RE Fee (₹)</label>
+                                                                <Field className="form-control" name="onlineRegistrationFee" type="number" />
+                                                                <ErrorMessage name="onlineRegistrationFee" component="div" className="invalid-msg" />
+                                                            </div>
+                                                        </>
+                                                    }
 
-                                                    <div className="col-md-8 mb-3">
+                                                    <div className="col-md-6 mb-3">
                                                         <label className="form-label">Venue
                                                             <span className="text-danger">*</span>
                                                         </label>
@@ -603,6 +639,12 @@ const ProgramList = () => {
                                                             className="form-control"
                                                         />
                                                         <ErrorMessage name="venue" component="div" className="invalid-msg" />
+                                                    </div>
+
+                                                    <div className="col-md-4 mb-3">
+                                                        <label className="form-label">No. of Nomination</label>
+                                                        <Field className="form-control" name="noOfNomination" type="number" />
+                                                        <ErrorMessage name="noOfNomination" component="div" className="invalid-msg" />
                                                     </div>
 
                                                 </div>
