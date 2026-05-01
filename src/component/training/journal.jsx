@@ -86,7 +86,8 @@ const Journal = () => {
                 <div>
                     <button
                         className="add"
-                        onClick={() => setShowModal(true)}>
+                        // onClick={() => setShowModal(true)}
+                        >
                         ADD NEW
                     </button>
                 </div>
