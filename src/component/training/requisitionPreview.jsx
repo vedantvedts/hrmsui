@@ -167,6 +167,37 @@ const RequisitionPreview = ({ reqData, setShowModal }) => {
                                             </div>
                                         )}
                                     </div>
+                                    <hr className="m-0 mt-3"></hr>
+                                    <div className="col-md-12 view-field">
+                                        {reqData.courseType === "Conference" &&
+                                            <>
+                                                <span className="view-label">Course Type : {reqData.courseType}</span>
+                                                <span className="view-label">Paper present in conference, if any : {reqData.isPaperPresent === "Y" ? "YES" : "NO"}</span>
+                                                {reqData.isPaperPresent === "Y" && (
+                                                    <div className="row g-2 mt-1">
+                                                        <div className="col-md-4 file-item">
+                                                            <span>Committee Approval Letter</span>
+                                                            <div className="file-text"
+                                                                onClick={() => handleDownload(reqData.requisitionId, reqData.fileCommitteeApproval)}
+                                                            >{reqData?.fileCommitteeApproval || "-"}</div>
+                                                        </div>
+                                                        <div className="col-md-4 file-item">
+                                                            <span>Paper Acceptance Letter</span>
+                                                            <div className="file-text"
+                                                                onClick={() => handleDownload(reqData.requisitionId, reqData.fileAcceptanceLetter)}
+                                                            >{reqData?.fileAcceptanceLetter || "-"}</div>
+                                                        </div>
+                                                        <div className="col-md-4 file-item">
+                                                            <span>Paper</span>
+                                                            <div className="file-text"
+                                                                onClick={() => handleDownload(reqData.requisitionId, reqData.filePaper)}
+                                                            >{reqData?.filePaper || "-"}</div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        }
+                                    </div>
 
                                 </div>
 

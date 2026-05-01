@@ -172,3 +172,23 @@ export const addProjectRoleIds = async (data) => {
         throw error;
     }
 };
+
+export const checkUserProjectAccess = async (projectCode) => {
+  try {
+    const response = await axios.get(`${API_URL}api/master/user-login-app-access`, { params: { projectCode }, headers: { 'Content-Type': 'application/json', ...authHeader() } });
+    return response.data;
+  } catch (error) {
+    console.error('Error in checkUserProjectAccess:', error);
+    throw error;
+  }
+};
+
+export const getReactAppUrls = async () => {
+  try {
+    const response = await axios.get(`${API_URL}api/master/get-react-app-urls`, { headers: { 'Content-Type': 'application/json', ...authHeader() } });
+    return response.data;
+  } catch (error) {
+    console.error("Error occurred in getReactAppUrls:", error);
+    throw error;
+  }
+};

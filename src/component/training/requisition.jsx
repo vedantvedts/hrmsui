@@ -217,44 +217,29 @@ const Requisition = () => {
     }
 
     const handleAdd = () => {
-        const notApproved = [];
         const feedbackMissing = [];
 
-        requisitionList.forEach(item => {
+        requisitionList
+        .filter(item => ["CO", "FA"].includes(item.status))
+        .forEach(item => {
             if (Number(item.initiatingOfficer) !== Number(empId)) return;
 
             const feedbackExists = feedbackList?.some(
                 feedback => Number(feedback?.requisitionId) === Number(item?.requisitionId)
             );
 
-            // Case 1: Status validation
-            if (!(item.status === "CO" || item.status === "FA")) {
-                notApproved.push(item.requisitionNumber);
-            }
-            // Case 2: Feedback validation
-            else if (!feedbackExists) {
+            if (!feedbackExists) {
                 feedbackMissing.push(item.requisitionNumber);
             }
         });
 
-        if (notApproved.length > 0 || feedbackMissing.length > 0) {
+        if (feedbackMissing.length > 0) {
             Swal.fire({
                 title: "Action Required",
-                icon: "info", // "info" or "warning" looks more professional
+                icon: "info",
                 html: `
                 <div style="text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6;">
-                    <p style="color: #555;">To proceed with adding a new entry, please ensure all your previous requisitions are finalized:</p>
-                    
-                    ${notApproved.length > 0 ? `
-                        <div style="margin-top: 15px; border-left: 4px solid #f39c12; padding-left: 10px;">
-                            <strong style="color: #e67e22;">Pending Approval</strong>
-                            <p style="font-size: 0.85rem; margin: 0; color: #666;">These require approval of director:</p>
-                            <div style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px;">
-                                ${notApproved.map(req => `<span style="background: #fef5e7; border: 1px solid #f39c12; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${req}</span>`).join("")}
-                            </div>
-                        </div>
-                    ` : ""}
-
+                    <p style="color: #555;">To proceed, please submit feedback for all your approved requisitions listed below.</p>
                     ${feedbackMissing.length > 0 ? `
                         <div style="margin-top: 15px; border-left: 4px solid #3498db; padding-left: 10px;">
                             <strong style="color: #2980b9;">Feedback Required</strong>

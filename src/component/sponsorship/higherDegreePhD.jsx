@@ -6,13 +6,16 @@ import { useNavigate } from "react-router-dom";
 import { Tooltip } from "react-tooltip";
 import { FaEdit } from "react-icons/fa";
 import { format } from "date-fns";
+import { usePermission } from "../../common/usePermission";
 
 
 const HigherDegreePhD = () => {
 
+    const { canView, canAdd, canEdit, canDelete } = usePermission("Ph.D");
+
     const navigate = useNavigate();
     const [sponsorship, setSponsorship] = useState([]);
-   
+
 
     useEffect(() => {
         fetchData("PHD");
@@ -44,7 +47,7 @@ const HigherDegreePhD = () => {
                 : "-",
             sortable: true, align: 'text-end'
         },
-        { name: "Action", selector: (row) => row.action, align: 'text-center' }
+        ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
     ];
 
     const mappedData = () => {
@@ -89,10 +92,10 @@ const HigherDegreePhD = () => {
                 degreeType: "PHD",
                 isEdit: true,
                 editData: item,
-                existingEmpIds:sponsorship
-                .filter(s => s.sponsorshipId !== item.sponsorshipId)
-                .map(s=>s.empId)
-              
+                existingEmpIds: sponsorship
+                    .filter(s => s.sponsorshipId !== item.sponsorshipId)
+                    .map(s => s.empId)
+
             }
         });
     };
@@ -108,22 +111,27 @@ const HigherDegreePhD = () => {
                     <span className="pulse-dot"></span>
                 </span>
             </h3>
+
             <div id="card-body" className="p-2 mt-2">
                 <Datatable columns={columns} data={mappedData()} />
             </div>
-            <div>
-                <button className="add"
-                 onClick={() =>
-                   navigate("/higherDegree-add", {
-                   state: {
-                   degreeType: "PHD",
-                   existingEmpIds : sponsorship.map(e => e.empId)
-                  
-    }
-})
-}
-                > ADD NEW</button>
-            </div>
+
+            {canAdd &&
+                <div>
+                    <button className="add"
+                        onClick={() =>
+                            navigate("/higherDegree-add", {
+                                state: {
+                                    degreeType: "PHD",
+                                    existingEmpIds: sponsorship.map(e => e.empId)
+
+                                }
+                            })
+                        }
+                    > ADD NEW</button>
+                </div>
+            }
+
         </div>
     );
 }

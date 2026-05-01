@@ -95,14 +95,16 @@ const OrganizerList = () => {
     }
 
     const schema = Yup.object().shape({
-        organizer: Yup.string().trim().required("Organizer is required"),
+        organizer: Yup.string().trim().required("Organizer is required")
+            .max(20, "Organizer can not exceed 20 characters"),
         contactName: Yup.string().required("Contact Name is required"),
         phoneNo: Yup.string()
             .trim()
             .required("Phone No is required")
             .matches(/^\d{10}$/, "Phone number must be exactly 10 digits"),
         faxNo: Yup.string().trim().required("Fax No is required"),
-        email: Yup.string().trim().required("Email is required"),
+        email: Yup.string().trim().required("Email is required")
+        .max(100, "Email can not exceed 100 characters"),
     });
 
 
@@ -118,7 +120,7 @@ const OrganizerList = () => {
 
             }
 
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }

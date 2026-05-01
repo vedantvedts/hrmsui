@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { REPORT_CONFIGS } from './reportConfigs';
 import SmartDatatable from '../../datatable/SmartDatatable';
 import { getReportData } from '../../service/dashboard.service';
+import AnnualTrainingReportViewer from './AnnualTrainingReportViewer';
+import BudgetExpenditureViewer from './BudgetExpenditureViewer';
+import GenderBudgetingViewer from './GenderBudgetingViewer';
+import TrainingSCSTViewer from './TrainingSCSTViewer';
 
 
 const DynamicReportViewer = ({ reportId }) => {
@@ -14,18 +18,18 @@ const DynamicReportViewer = ({ reportId }) => {
       setLoading(true);
       try {
 
-          const response = await getReportData(config.fetchUrl);
-          const rawData = response.data || [];
-          if(rawData.legnth === 0) {
-            setData([]);
-            return;
-          } else {
-            const transformedData = rawData.map((item, index) => ({
-              ...item,
-              sn: index + 1,
-            }));
-            setData(transformedData || []);
-          }
+        const response = await getReportData(config.fetchUrl);
+        const rawData = response.data || [];
+        if (rawData.length === 0) {
+          setData([]);
+          return;
+        } else {
+          const transformedData = rawData.map((item, index) => ({
+            ...item,
+            sn: index + 1,
+          }));
+          setData(transformedData || []);
+        }
 
       } catch (error) {
         console.error("Failed to fetch report data", error);
@@ -41,14 +45,34 @@ const DynamicReportViewer = ({ reportId }) => {
   if (!config) return <div className="p-4">Select a valid report.</div>;
   if (loading) return <div className="text-center p-5">Loading report data...</div>;
 
+  const renderReport = () => {
+    switch (reportId) {
+      case "8":
+        return <AnnualTrainingReportViewer reportData={data} />;
+      case "11":
+        return <BudgetExpenditureViewer reportData={data} />;
+      case "12":
+        return <GenderBudgetingViewer reportData={data} />;
+      case "13":
+        return <TrainingSCSTViewer reportData={data} />;
+      default:
+        return (
+          <SmartDatatable
+            key={reportId}
+            reportId={reportId}
+            columns={config.columns}
+            data={data}
+            fileName={config.fileName}
+            footer={config.renderFooter}
+          />
+        );
+    }
+  };
+
   return (
-    <SmartDatatable
-      key={reportId}
-      columns={config.columns} 
-      data={data} 
-      fileName={config.fileName}
-      footer={config.renderFooter}
-    />
+    <>
+      {renderReport()}
+    </>
   );
 };
 

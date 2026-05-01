@@ -12,3 +12,10 @@ export const formatIndianRupee = (value) => {
     maximumFractionDigits: 2,
   }).format(value);
 };
+
+export const getCurrentRegularDate = () => {
+
+  const date = new Date().toISOString().split("T")[0];
+  const [year, month, day] = date.split("-");
+  return `${day}-${month}-${year}`;
+}

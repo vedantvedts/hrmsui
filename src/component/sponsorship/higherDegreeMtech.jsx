@@ -6,12 +6,15 @@ import { useNavigate } from "react-router-dom";
 import { Tooltip } from "react-tooltip";
 import { FaEdit } from "react-icons/fa";
 import { format } from "date-fns";
+import { usePermission } from "../../common/usePermission";
 
 const HigherDegreeMtech = () => {
 
+    const { canView, canAdd, canEdit, canDelete } = usePermission("M.Tech");
+
     const navigate = useNavigate();
     const [sponsorships, setSponsorships] = useState([]);
-      
+
 
     useEffect(() => {
         fetchData("MTECH");
@@ -43,7 +46,7 @@ const HigherDegreeMtech = () => {
                 : "-",
             sortable: true, align: 'text-end'
         },
-        { name: "Action", selector: (row) => row.action, align: 'text-center' }
+        ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
     ];
 
     const mappedData = () => {
@@ -51,7 +54,7 @@ const HigherDegreeMtech = () => {
             .map((item, index) => {
                 return {
                     sn: index + 1,
-                    employeeName: `${item.employeeName}, ${item.empDesigCode}`|| "NA",
+                    employeeName: `${item.employeeName}, ${item.empDesigCode}` || "NA",
                     delegatedPower: item.delegatedPower || "NA",
                     discipline: item.discipline || "NA",
                     subject: item.subject || "NA",
@@ -83,18 +86,18 @@ const HigherDegreeMtech = () => {
     };
 
 
-   const handleEdit = (item) => {
-    navigate("/higherDegree-add", {
-        state: {
-            degreeType: "MTECH",
-            isEdit: true,
-            editData: item,
-            existingEmpIds: sponsorships
-                .filter(s => s.sponsorshipId !== item.sponsorshipId)
-                .map(s => s.empId)
-        }
-    });
-};
+    const handleEdit = (item) => {
+        navigate("/higherDegree-add", {
+            state: {
+                degreeType: "MTECH",
+                isEdit: true,
+                editData: item,
+                existingEmpIds: sponsorships
+                    .filter(s => s.sponsorshipId !== item.sponsorshipId)
+                    .map(s => s.empId)
+            }
+        });
+    };
 
     return (
         <div>
@@ -108,22 +111,26 @@ const HigherDegreeMtech = () => {
                     <span className="pulse-dot"></span>
                 </span>
             </h3>
+
             <div id="card-body" className="p-2 mt-2">
                 <Datatable columns={columns} data={mappedData()} />
             </div>
-            <div>
-                <button className="add"
-                 onClick={() =>
-                   navigate("/higherDegree-add", {
-                   state: {
-                   degreeType: "MTECH",   
-                   existingEmpIds: sponsorships.map(s => s.empId)  
-    }
-})
-}
-                > ADD NEW</button>
-            </div>
 
+            {canAdd &&
+                <div>
+                    <button className="add"
+                        onClick={() =>
+                            navigate("/higherDegree-add", {
+                                state: {
+                                    degreeType: "MTECH",
+                                    existingEmpIds: sponsorships.map(s => s.empId)
+                                }
+                            })
+                        }
+                    > ADD NEW</button>
+                </div>
+            }
+            
         </div>
     );
 }

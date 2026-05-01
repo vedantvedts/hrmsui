@@ -51,9 +51,11 @@ const AddEditRequisition = () => {
         duration: "",
         reference: "",
         organizedBy: "",
+        courseType: "",
         modeOfPayment: "ECS",
         initiatingOfficer: Number(empId) || "",
         isSubmitted: "N",
+        isPaperPresent: "N",
         necessity: "",
         venue: "",
         offlineRegistrationFee: "",
@@ -62,6 +64,9 @@ const AddEditRequisition = () => {
         multipartFileCheque: null,
         multipartFilePan: null,
         multipartFileBrochure: null,
+        multipartCommitteeApproval: null,
+        multipartAcceptanceLetter: null,
+        multipartPaper: null,
     });
 
     useEffect(() => {
@@ -125,6 +130,7 @@ const AddEditRequisition = () => {
                 const data = response.data;
                 setInitialValues({
                     courseId: data.courseId || "",
+                    courseType: data.courseType || "",
                     fromDate: data.fromDate ? new Date(data.fromDate) : null,
                     toDate: data.toDate ? new Date(data.toDate) : null,
                     duration: data.duration || "",
@@ -135,12 +141,16 @@ const AddEditRequisition = () => {
                     modeOfPayment: data.modeOfPayment || "ECS",
                     initiatingOfficer: data.initiatingOfficer || "",
                     isSubmitted: data.isSubmitted || "N",
+                    isPaperPresent: data.isPaperPresent || "N",
                     necessity: data.necessity || "",
                     reason: data.reason || "",
                     multipartFileEcs: null,
                     multipartFileCheque: null,
                     multipartFilePan: null,
                     multipartFileBrochure: null,
+                    multipartCommitteeApproval: null,
+                    multipartAcceptanceLetter: null,
+                    multipartPaper: null,
                 });
                 const fees = [];
                 if (data.offlineRegistrationFee > 0) {
@@ -162,6 +172,9 @@ const AddEditRequisition = () => {
                     multipartFileCheque: data.fileCheque ? { name: data.fileCheque } : null,
                     multipartFilePan: data.filePan ? { name: data.filePan } : null,
                     multipartFileBrochure: data.fileBrochure ? { name: data.fileBrochure } : null,
+                    multipartCommitteeApproval: data.fileCommitteeApproval ? { name: data.fileCommitteeApproval } : null,
+                    multipartAcceptanceLetter: data.fileAcceptanceLetter ? { name: data.fileAcceptanceLetter } : null,
+                    multipartPaper: data.filePaper ? { name: data.filePaper } : null,
                 });
             } else {
                 Swal.fire("Error", "Failed to fetch requisition details. Please try again later.", "error");
@@ -270,7 +283,7 @@ const AddEditRequisition = () => {
     const handleEligibleSubmit = async () => {
         if (!validateEligibility()) return;
         try {
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) return;
 
             const response = await addEligible({ eligibilityName: eligibilityInput });
@@ -336,6 +349,7 @@ const AddEditRequisition = () => {
 
     const buildValidationSchema = (isEdit) => Yup.object().shape({
         courseId: Yup.string().required("Course is required"),
+        courseType: Yup.string().required("Course Type is required"),
         fromDate: Yup.date().required("From Date is required"),
         toDate: Yup.date()
             .required("To Date is required")
@@ -389,7 +403,34 @@ const AddEditRequisition = () => {
                     ? optionalFileValidation("Brochure file")
                     : requiredFileValidation("Brochure file"),
             otherwise: (schema) => schema.nullable()
-        })
+        }),
+
+        multipartCommitteeApproval: Yup.mixed().when("isPaperPresent", {
+            is: "Y",
+            then: () =>
+                isEdit
+                    ? optionalFileValidation("Committee Approval file")
+                    : requiredFileValidation("Committee Approval file"),
+            otherwise: (schema) => schema.nullable()
+        }),
+
+        multipartAcceptanceLetter: Yup.mixed().when("isPaperPresent", {
+            is: "Y",
+            then: () =>
+                isEdit
+                    ? optionalFileValidation("Acceptance Letter file")
+                    : requiredFileValidation("Acceptance Letter file"),
+            otherwise: (schema) => schema.nullable()
+        }),
+
+        multipartPaper: Yup.mixed().when("isPaperPresent", {
+            is: "Y",
+            then: () =>
+                isEdit
+                    ? optionalFileValidation("Paper file")
+                    : requiredFileValidation("Paper file"),
+            otherwise: (schema) => schema.nullable()
+        }),
 
     });
 
@@ -430,7 +471,7 @@ const AddEditRequisition = () => {
                 toDate: format(new Date(values.toDate), "yyyy-MM-dd"),
             };
 
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }
@@ -493,6 +534,7 @@ const AddEditRequisition = () => {
         setFieldValue("fromDate", fromDate);
         setFieldValue("toDate", toDate);
         setFieldValue("organizedBy", newOrgData ? newOrgData.organizer : "");
+        setFieldValue("courseType", programData ? programData.courseType : "");
         setFieldValue("venue", programData ? programData.venue : "");
         setFieldValue("offlineRegistrationFee", programData ? programData.offlineRegistrationFee : 0);
         setFieldValue("onlineRegistrationFee", programData ? programData.onlineRegistrationFee : 0);
@@ -540,7 +582,7 @@ const AddEditRequisition = () => {
                 requisitionId: requisitionId || null,
             }
 
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }
@@ -633,6 +675,12 @@ const AddEditRequisition = () => {
                                     </div>
 
                                     <div className="col-md-2">
+                                        <label className="form-label">Course Type</label>
+                                        <Field name="courseType" type="text" className="form-control" disabled />
+                                        <ErrorMessage name="courseType" component="div" className="invalid-msg" />
+                                    </div>
+
+                                    <div className="col-md-2">
                                         <label className="form-label">From Date</label>
                                         <DatePicker
                                             id="fromDate"
@@ -676,13 +724,13 @@ const AddEditRequisition = () => {
                                         <ErrorMessage name="toDate" component="div" className="text-danger small" />
                                     </div>
 
-                                    <div className="col-md-2">
-                                        <label className="form-label">Duration (In Days)</label>
+                                    <div className="col-md-1">
+                                        <label className="form-label">Duration</label>
                                         <Field name="duration" type="text" className="form-control" placeholder="Duration" disabled />
                                         <ErrorMessage name="duration" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-3">
+                                    <div className="col-md-2">
                                         <label className="form-label">Organized By</label>
                                         <Field name="organizedBy" type="text" className="form-control" disabled />
                                         <ErrorMessage name="organizedBy" component="div" className="invalid-msg" />
@@ -780,39 +828,8 @@ const AddEditRequisition = () => {
                                         <ErrorMessage name="modeOfPayment" component="div" className="invalid-msg" />
                                     </div>
 
-                                    {/* <div className="col-md-4">
-                                        <label className="form-label">Initiating Officer</label>
-                                        <Select
-                                            options={employeeOptions}
-                                            value={employeeOptions.find((item) => item.value === Number(values.initiatingOfficer)) || null}
-                                            onChange={(option) => setFieldValue("initiatingOfficer", option ? option.value : "")}
-                                            placeholder="Select Officer"
-                                            isSearchable
-                                        />
-                                        <ErrorMessage name="initiatingOfficer" component="div" className="invalid-msg" />
-                                    </div> */}
-                                    {/* 
-                                    {values.offlineRegistrationFee > 30000 &&
-                                        <>
-                                            <div className="col-md-4 mt-4">
-                                                <label className="form-label">Whether the present theme has been reflected in the annual training calendar</label>
-                                                <Field name="presentTheme" type="text" className="form-control" />
-                                                <ErrorMessage name="presentTheme" component="div" className="invalid-msg" />
-                                            </div>
-                                            <div className="col-md-5 mt-4">
-                                                <label className="form-label">List the application of benefits w.r.t individuals assignments</label>
-                                                <Field name="application" as="textarea" className="form-control" />
-                                                <ErrorMessage name="application" component="div" className="invalid-msg" />
-                                            </div>
-                                            <div className="col-md-3 mt-4">
-                                                <label className="form-label">Present area of responsibility and role</label>
-                                                <Field name="responsibility" type="text" className="form-control" />
-                                                <ErrorMessage name="responsibility" component="div" className="invalid-msg" />
-                                            </div>
-                                        </>
-                                    } */}
 
-                                    <div className="col-md-8 mt-4">
+                                    <div className="col-md-6 mt-4">
                                         <span className="form-label me-3">
                                             Feedback / Impact forms / Participation certificate of previous course submitted
                                         </span>
@@ -837,6 +854,95 @@ const AddEditRequisition = () => {
                                             </button>
                                         </div>
                                     </div>
+
+                                    {values.courseType === "Conference" &&
+                                        <>
+                                            <div className="col-md-6 mt-4">
+                                                <span className="form-label me-3">
+                                                    Paper present in conference, if any
+                                                </span>
+
+                                                <div className="btn-group bg-light rounded-pill border" role="group">
+                                                    <button
+                                                        type="button"
+                                                        className={`btn rounded-pill px-4 py-2 transition-all ${values.isPaperPresent === "Y" ? "btn-success shadow-sm" : "btn-light text-muted"
+                                                            }`}
+                                                        onClick={() => setFieldValue("isPaperPresent", "Y")}
+                                                    >
+                                                        Yes
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        className={`btn rounded-pill px-4 py-2 transition-all ${values.isPaperPresent === "N" ? "btn-danger shadow-sm" : "btn-light text-muted"
+                                                            }`}
+                                                        onClick={() => setFieldValue("isPaperPresent", "N")}
+                                                    >
+                                                        No
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {values.isPaperPresent === "Y" &&
+                                                <div className="row mt-3 text-start">
+                                                    <h6 className="text-start text-primary">Mandatory Enclosures for conference</h6>
+                                                    {[
+                                                        { label: "1. Commitee Approval Letter", name: "multipartCommitteeApproval" },
+                                                        { label: "2. Paper Acceptance Letter", name: "multipartAcceptanceLetter" },
+                                                        { label: "3. Paper", name: "multipartPaper" },
+                                                    ].map((item, index) => (
+                                                        <div className="col-md-4 mb-3" key={index}>
+                                                            <label className="form-label small fw-medium text-secondary">
+                                                                {item.label}
+                                                            </label>
+
+                                                            <div className="border rounded p-2 bg-light">
+
+                                                                {/* Existing File (Edit Mode) */}
+                                                                {requisitionId && existingFiles[item.name] && !values[item.name] && (
+                                                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-link text-primary p-0 small text-decoration-none"
+                                                                            onClick={() => handleDownload(requisitionId, existingFiles[item.name].name)}
+                                                                        >
+                                                                            <BsFileEarmark className="me-1 mb-1" />
+                                                                            {existingFiles[item.name].name}
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Newly Selected File */}
+                                                                {values[item.name] && (
+                                                                    <div className="small text-success mb-2">
+                                                                        <FaCheckCircle className="me-1" />
+                                                                        {values[item.name].name}
+                                                                    </div>
+                                                                )}
+
+                                                                {/* File Input */}
+                                                                <input
+                                                                    type="file"
+                                                                    className="form-control form-control-sm"
+                                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                                    onChange={(event) => {
+                                                                        const file = event.currentTarget.files?.[0] || null;
+                                                                        setFieldValue(item.name, file);
+                                                                    }}
+                                                                    onBlur={() => setFieldTouched(item.name, true)}
+                                                                    onClick={(e) => (e.target.value = null)}
+                                                                />
+
+                                                            </div>
+
+                                                            <ErrorMessage name={item.name} component="div" className="invalid-msg" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            }
+
+                                        </>
+                                    }
 
                                     <div className="col-md-12">
                                         <label className="form-label">Necessity of course and benefits</label>

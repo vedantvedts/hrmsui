@@ -41,7 +41,7 @@ export const login = async (username, password) => {
       localStorage.setItem('salutation', emp?.data.salutation);
       localStorage.setItem('roleId', emp?.data.roleId);
 
-
+      await customAuditStampingLogin(username);
       return response.data;
     } else {
       throw new Error('Invalid response from server');
@@ -67,10 +67,11 @@ export const setLocalStorageData = async (username) => {
     localStorage.setItem('designationCode', emp?.data.empDesigName);
     localStorage.setItem('title', emp?.data.title);
     localStorage.setItem('roleId', emp?.data.roleId);
-    //await customAuditStampingLogin(username);
+
+    await customAuditStampingLogin(username);
 
   } catch (error) {
-    console.error('Error occurred in getEmpDetails()', error);
+    console.error('Error occurred in setLocalStorageData()', error);
     throw error;
   }
 };
@@ -79,6 +80,7 @@ export const logout = async (logoutType) => {
   const user = getCurrentUser();
   if (user && user.username) {
     try {
+      await customAuditStampingLogout(user.username, logoutType);
       localStorage.clear();
     } catch (error) {
       console.error('Error occurred in logout:', error);
@@ -103,3 +105,39 @@ export const getUserDetails = async (username) => {
     throw error;
   }
 };
+
+export const customAuditStampingLogin = async (username) => {
+  if (!username) {
+    throw new Error('No user found');
+  }
+
+  try {
+    const response = await axios.post(
+      `${API_URL}api/admin/custom-audit-stamping-login`,
+      username,
+      { headers: { 'Content-Type': 'application/json', ...authHeader() } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error occurred in customAuditStampingLogin:', error);
+    throw error;
+  }
+};
+
+export const customAuditStampingLogout = async (username, logoutType) => {
+  if (!username) {
+    throw new Error('No user found');
+  }
+
+  try {
+    const response = await axios.post(
+      `${API_URL}api/admin/custom-audit-stamping-logout`,
+      { username, logoutType },
+      { headers: { 'Content-Type': 'application/json', ...authHeader() } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error occurred in customAuditStampingLogout:', error);
+    throw error;
+  }
+}
