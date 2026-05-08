@@ -500,7 +500,7 @@ export const getCepDataById = async (id) => {
 
 export const addCepData = async (data) => {
     try {
-        return (await axios.post(`${API_URL}api/training/add-cep`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+        return (await axios.post(`${API_URL}api/training/add-cep`, data, { headers: { 'Content-Type': 'multipart/form-data', ...authHeader() } })).data;
     } catch (error) {
         console.error('Error occurred in AddCepData():', error);
         throw error;
@@ -510,14 +510,13 @@ export const addCepData = async (data) => {
 
 export const editCepData = async (data) => {
     try {
-        const response = await axios.put(`${API_URL}api/training/edit-cep`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } });
+        const response = await axios.put(`${API_URL}api/training/edit-cep`, data, { headers: { 'Content-Type': 'multipart/form-data', ...authHeader() } });
         return response.data;
     } catch (error) {
         console.error("Error updating program", error);
         return { success: false, message: "Something went wrong" };
     }
 };
-
 
 
 export const getDistribution = async () => {
@@ -588,5 +587,132 @@ export const updateCalendar = async (formData) => {
     } catch (error) {
         console.error("Error updating requisition", error);
         return { success: false, message: "Something went wrong" };
+    }
+};
+
+export const cepFileDownload = async (attachmentId) => {
+    try {
+        const response = await axios.get(
+            `${API_URL}api/training/cep-file/${attachmentId}`,
+            {
+                headers: authHeader(),
+                responseType: "blob"
+            }
+        );
+
+        const contentDisposition = response.headers["content-disposition"];
+        let fileName = "downloaded_file";
+
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?(.+?)"?$/);
+            if (match) {
+                fileName = match[1];
+            }
+        }
+
+        return {
+            data: response.data,
+            fileName,
+            contentType: response.headers["content-type"]
+        };
+    } catch (error) {
+        return { data: '0' };
+    }
+};
+
+
+export const getJournalList = async () => {
+    try {
+        const response = await axios.get(`${API_URL}api/training/journal`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeader()
+            }
+        });
+        return response.data;
+
+    } catch (error) {
+        console.error('Error occurred in getJournalList():', error);
+        throw error;
+    }
+};
+
+
+// export const getCepDataById = async (id) => {
+//     try {
+//         return (await axios.get(`${API_URL}api/training/cepById/${id}`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+//     } catch (error) {
+//         console.error('Error occurred in getCepDataById():', error);
+//         throw error;
+//     }
+// };
+
+
+export const addJournalData = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/add-journal`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in addJournalData():', error);
+        throw error;
+    }
+};
+
+
+export const editJournalData = async (data) => {
+    try {
+        const response = await axios.put(`${API_URL}api/training/edit-journal`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } });
+        return response.data;
+    } catch (error) {
+        console.error('Error occurred in editJournalData():', error);
+        throw error;
+    }
+};
+
+
+export const getMandatoryTrainingList = async (empId, roleName) => {
+    try {
+        const response = await axios.get(`${API_URL}api/training/mandatory-training`, {
+            params: { empId, roleName },
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeader()
+            }
+        });
+        return response.data;
+
+    } catch (error) {
+        console.error('Error occurred in getMandatoryTrainingList():', error);
+        throw error;
+    }
+};
+
+
+export const getMandatoryTrainingDataById = async (id) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/mandatoryTrainingById/${id}`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getMandatoryTrainingDataById():', error);
+        throw error;
+    }
+};
+
+
+export const addMandatoryTrainingData = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/add-mandatory-training`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in addMandatoryTrainingData():', error);
+        throw error;
+    }
+};
+
+
+export const editMandatoryTrainingData = async (data) => {
+    try {
+        const response = await axios.put(`${API_URL}api/training/edit-mandatory-training`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } });
+        return response.data;
+    } catch (error) {
+        console.error('Error occurred in editMandatoryTrainingData():', error);
+        throw error;
     }
 };

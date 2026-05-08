@@ -4,13 +4,14 @@ import styles from "./AllReportsTemplate.module.css";
 import { Tooltip } from "react-tooltip";
 import { FiMenu, FiSearch, FiFileText, FiChevronLeft } from "react-icons/fi";
 import DynamicReportViewer from "./DynamicReportViewer";
+import DatePicker from "react-datepicker";
 
 
 const REPORTS_LIST = [
     { id: "1", name: "Nominal Roll" },
     { id: "2", name: "Training Report (Course)" },
     { id: "3", name: "Training Report (Seminar/Symposia/Conferences/Workshop)" },
-    { id: "4", name: "CEP" },
+    { id: "4", name: "In-House CEP" },
     { id: "5", name: "Details of Sponsorship to Higher Degree M.Tech" },
     { id: "6", name: "Details of Sponsorship to Higher Degree Ph.D" },
     { id: "7", name: "HR Distribution Project wsie Tech/Non Tech Deployment of DRDS & DRTC" },
@@ -22,10 +23,30 @@ const REPORTS_LIST = [
     { id: "13", name: "Training of SC/ST Employees" },
 ];
 
+const today = new Date();
+
+const getFinancialYearDates = () => {
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth(); // 0 = Jan
+
+    // If month is Jan/Feb/Mar → FY started previous year
+    const fyStartYear = currentMonth < 3 ? currentYear - 1 : currentYear;
+
+    return {
+        from: new Date(fyStartYear, 3, 1), // 1 Apr
+        to: new Date(fyStartYear + 1, 2, 31), // 31 Mar
+    };
+};
+
+const fyDates = getFinancialYearDates();
+
 const AllReportsTemplate = () => {
+
     const [activeReport, setActiveReport] = useState(REPORTS_LIST[0].id);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [fromDate, setFromDate] = useState(fyDates.from);
+    const [toDate, setToDate] = useState(fyDates.to);
 
     // Filter logic for the search bar
     const filteredReports = REPORTS_LIST.filter(report =>
@@ -75,14 +96,53 @@ const AllReportsTemplate = () => {
                     <main className={styles.content}>
                         <div className="container-fluid">
                             <header className={styles.contentHeader}>
-                                <div>
-                                    <h3>{REPORTS_LIST.find(r => r.id === activeReport)?.name}</h3>
+                                <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                                    {/* Left Side Title */}
+                                    <h3 className="mb-0">
+                                        {REPORTS_LIST.find((r) => r.id === activeReport)?.name}
+                                    </h3>
+
+                                    {/* Right Side Date Pickers */}
+                                    {["4", "11"].includes(activeReport) && (
+                                        <div className="d-flex align-items-center gap-2">
+
+                                            <DatePicker
+                                                id="fromDate"
+                                                name="fromDate"
+                                                selected={fromDate}
+                                                onChange={(date) => setFromDate(date)}
+                                                className="form-control"
+                                                placeholderText="From Date"
+                                                dateFormat="dd-MM-yyyy"
+                                                showYearDropdown
+                                                showMonthDropdown
+                                                dropdownMode="select"
+                                                onKeyDown={(event) => event.preventDefault()}
+                                            />
+
+                                            <DatePicker
+                                                id="toDate"
+                                                name="toDate"
+                                                selected={toDate}
+                                                onChange={(date) => setToDate(date)}
+                                                className="form-control"
+                                                placeholderText="To Date"
+                                                dateFormat="dd-MM-yyyy"
+                                                showYearDropdown
+                                                showMonthDropdown
+                                                dropdownMode="select"
+                                                minDate={fromDate}
+                                                onKeyDown={(event) => event.preventDefault()}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </header>
 
                             {/* Only one component call, completely dynamic! */}
                             <div className={styles.tableWrapper}>
-                                <DynamicReportViewer reportId={activeReport} />
+                                <DynamicReportViewer reportId={activeReport} fromDate={fromDate} toDate={toDate} />
                             </div>
 
                         </div>

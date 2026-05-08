@@ -9,7 +9,7 @@ import { getCurrentRegularDate } from "../component/utils/formatterUtils";
 
 const mapAlignment = (align) => {
   if (align === 'text-center') return 'center';
-  if (align === 'text-right') return 'right';
+  if (align === 'text-end') return 'right';
   return 'left';
 };
 

@@ -33,62 +33,65 @@ import DistributionComponent from "../component/training/distribution.jsx";
 import AddEditDistributionComponent from "../component/training/distributionaddEdit.jsx";
 import AuditStampingList from "../component/admin/auditStamping.jsx";
 import Journal from "../component/training/journal.jsx";
+import MandatoryTraining from "../component/training/mandatoryTraining.jsx";
+import MandatoryTrainingAddEdit from "../component/training/mandatoryTrainingAddEdit.jsx";
+import LicenseExp from "../component/license/licenseExp.component.jsx";
 
 
 function AppRoutes() {
 
-   const TMDS_URL = config.TMDS_URL;
+  const TMDS_URL = config.TMDS_URL;
 
 
   // NEW: Check if we are in a sync process immediately on load
   const isSyncing = new URLSearchParams(window.location.search).get("hrms") === "true";
   const [isCheckingSession, setIsCheckingSession] = useState(isSyncing);
-  
+
   const location = useLocation();
   const navigate = useNavigate();
   // If syncing, ignore the current 'user' in storage for the first render
   const user = isSyncing ? null : JSON.parse(localStorage.getItem("user"));
 
- useEffect(() => {
-  const handleMessage = async (event) => {
-    // 1. Security check
+  useEffect(() => {
+    const handleMessage = async (event) => {
+      // 1. Security check
       const URLs = config.URLs;
       if (!URLs.includes(event.origin)) return;
 
-    if (event.data.user) {
-      
-      // 2. Clear everything to prevent User A's data from hanging around
-      localStorage.clear(); 
-      localStorage.setItem("user", JSON.stringify(event.data.user));
+      if (event.data.user) {
 
-      if (event.data.user.username) {
-        await setLocalStorageData(event.data.user.username);
+        // 2. Clear everything to prevent User A's data from hanging around
+        localStorage.clear();
+        localStorage.setItem("user", JSON.stringify(event.data.user));
+
+        if (event.data.user.username) {
+          await setLocalStorageData(event.data.user.username);
+        }
+        setIsCheckingSession(false);
+
+        // This removes "?ibas=true" from the address bar WITHOUT refreshing the page
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    const timer = setTimeout(() => {
       setIsCheckingSession(false);
-      
-      // This removes "?ibas=true" from the address bar WITHOUT refreshing the page
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  };
+    }, 3000);
 
-  window.addEventListener("message", handleMessage);
-  
-  const timer = setTimeout(() => {
-    setIsCheckingSession(false);
-  }, 3000);
-
-  return () => {
-    window.removeEventListener("message", handleMessage);
-    clearTimeout(timer);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      clearTimeout(timer);
+    };
+  }, []);
 
 
 
   useEffect(() => {
     if (isCheckingSession) return;
 
-    const publicPaths = ["/", "/login"];
+    const publicPaths = ["/", "/login", "/license-exp"];
     if (!user && !publicPaths.includes(location.pathname)) {
       navigate("/login");
     }
@@ -113,7 +116,7 @@ function AppRoutes() {
     );
   };
 
-  const hideHeader = ["/", "/login"].includes(location.pathname);
+  const hideHeader = ["/", "/login", "/license-exp"].includes(location.pathname);
 
 
   return (
@@ -148,10 +151,13 @@ function AppRoutes() {
         <Route path="/req-approved-list" element={<RequisitionApprovedList />} />
         <Route path="/cep" element={<CepComponent />} />
         <Route path="/cep-add" element={<AddEditCepComponent />} />
-        <Route path="/hr-distribution" element={<DistributionComponent />}/>
-        <Route path="/hr-distribution-add" element={<AddEditDistributionComponent /> } />
-        <Route path="/audit-stamping"  element={ <AuditStampingList /> } />
-        <Route path="/journal"  element={ <Journal /> } />
+        <Route path="/hr-distribution" element={<DistributionComponent />} />
+        <Route path="/hr-distribution-add" element={<AddEditDistributionComponent />} />
+        <Route path="/audit-stamping" element={<AuditStampingList />} />
+        <Route path="/journal" element={<Journal />} />
+        <Route path="/mandatory-training" element={<MandatoryTraining />} />
+        <Route path="/mandatory-training-add" element={<MandatoryTrainingAddEdit />} />
+        <Route path='/license-exp' element={<LicenseExp />} />
       </Routes>
 
     </>

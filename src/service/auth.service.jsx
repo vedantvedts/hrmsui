@@ -141,3 +141,20 @@ export const customAuditStampingLogout = async (username, logoutType) => {
     throw error;
   }
 }
+
+export const getLicense = async () => {
+  try {
+    const response = await axios.get(
+      `${API_URL}api/admin/get-license`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data; // true / false
+  } catch (error) {
+    console.error("License API error:", error);
+    return false;
+  }
+};

@@ -101,7 +101,7 @@ const Navbar = () => {
     };
 
     const formatName = () => {
-        const cleanTitle = (title && title !== "null") ? title : (salutation && salutation !== "null") ? salutation : "";
+        const cleanTitle = (salutation && salutation !== "null") ? salutation : (title && title !== "null") ? title : "";
         const cleanName = (empName && empName !== "null") ? empName : "";
         const cleanDesignation = (designationCode && designationCode !== "null") ? `, ${designationCode}` : "";
 

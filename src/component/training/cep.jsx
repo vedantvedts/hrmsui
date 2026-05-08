@@ -32,7 +32,7 @@ const CepComponent = () => {
 
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-        { name: "Division Name ", selector: (row) => row.divisionCode, sortable: true, align: 'text-center' },
+        { name: "Division", selector: (row) => row.divisionCode, sortable: true, align: 'text-center' },
         { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: 'text-center' },
         { name: "To Date", selector: (row) => row.toDate, sortable: true, align: 'text-center' },
         { name: "Duration", selector: (row) => row.duration, sortable: true, align: 'text-center' },
@@ -55,6 +55,8 @@ const CepComponent = () => {
             sortable: true,
             align: "text-end",
         },
+        { name: "Course Co-ordinator", selector: (row) => row.courseCoordinatorName, sortable: true, align: 'text-start' },
+        { name: "Deputy Course Co-ordinator", selector: (row) => row.deputyCourseCoordinatorName, sortable: true, align: 'text-start' },
         { name: " Comment ", selector: (row) => row.comments, sortable: true, align: 'text-start' },
         ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
 
@@ -70,6 +72,8 @@ const CepComponent = () => {
             duration: cepItem.duration || "NA",         // was missing entirely
             fromDate: cepItem.fromDate ? format(new Date(cepItem.fromDate), "dd-MM-yyyy") : "NA",
             toDate: cepItem.toDate ? format(new Date(cepItem.toDate), "dd-MM-yyyy") : "NA",
+            courseCoordinatorName: cepItem.courseCoordinatorName || "-",
+            deputyCourseCoordinatorName: cepItem.deputyCourseCoordinatorName || "-",
             comments: cepItem.comments || "NA",
             action: (
                 <>

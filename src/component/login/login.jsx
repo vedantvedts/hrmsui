@@ -4,7 +4,7 @@ import "../login/loginPage.css";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import { FaEye, FaEyeSlash, FaLock, FaUserAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { login } from "../../service/auth.service";
+import { getLicense, login } from "../../service/auth.service";
 
 const Login = () => {
 
@@ -38,13 +38,24 @@ const Login = () => {
         const password = values.password;
 
         try {
+            const isLicenseValid = await getLicense();
+
+            if (!isLicenseValid) {
+                localStorage.setItem("license-exp", "Y");
+                navigate("/license-exp");
+                return;
+            }
+
+            localStorage.setItem("license-exp", "N");
+
             const response = await login(username, password);
 
-            if (response.success) {
-                navigate("/dashboard");
+            if (response?.success) {
+                navigate("/dashboard", { replace: true });
             } else {
-                showError(response.message || "Login failed");
+                showError(response?.message || "Login failed");
             }
+
         } catch (error) {
             console.error("Login error:", error);
             let resMessage = "Something went wrong, please try again!";
