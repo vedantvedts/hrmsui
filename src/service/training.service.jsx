@@ -621,9 +621,10 @@ export const cepFileDownload = async (attachmentId) => {
 };
 
 
-export const getJournalList = async () => {
+export const getJournalList = async (empId, roleName) => {
     try {
         const response = await axios.get(`${API_URL}api/training/journal`, {
+            params: { empId, roleName },
             headers: {
                 'Content-Type': 'application/json',
                 ...authHeader()
@@ -713,6 +714,15 @@ export const editMandatoryTrainingData = async (data) => {
         return response.data;
     } catch (error) {
         console.error('Error occurred in editMandatoryTrainingData():', error);
+        throw error;
+    }
+};
+
+export const getMandatoryTrainingByEmpId = async (id) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/mandatory-training/participant/${id}`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getMandatoryTrainingByEmpId():', error);
         throw error;
     }
 };

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Datatable from "../../datatable/Datatable";
 import Navbar from "../navbar/Navbar";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { forwardRequisition, getFeedbackList, getRequisitionPrint, getRequisitions, revokeRequisition } from "../../service/training.service";
 import Swal from "sweetalert2";
 import { format } from "date-fns";
@@ -20,6 +20,7 @@ const Requisition = () => {
 
     const { canView, canAdd, canEdit, canDelete } = usePermission("Requisition");
 
+    const location = useLocation();
     const [requisitionList, setRequisitionList] = useState([]);
     const [feedbackList, setFeedbackList] = useState([]);
     const navigate = useNavigate();
@@ -27,6 +28,7 @@ const Requisition = () => {
     const roleName = localStorage.getItem("roleName");
     const [showModal, setShowModal] = useState(false);
     const [reqData, setShowReqData] = useState(null);
+    const [selectedTab, setSelectedTab] = useState(location.state?.selectedTab || "free");
 
 
     useEffect(() => {
@@ -90,8 +92,13 @@ const Requisition = () => {
         { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' },
     ];
 
+    const freeList = requisitionList.filter(item => item.registrationFee === 0);
+    const paidList = requisitionList.filter(item => item.registrationFee > 0);
+    const filteredList = selectedTab === "free" ? freeList : paidList;
+
+
     const mappedData = () => {
-        return requisitionList.map((item, index) => {
+        return filteredList.map((item, index) => {
 
             const feedbackExists = feedbackList?.some(
                 feedback => Number(feedback?.requisitionId) === Number(item?.requisitionId)
@@ -220,18 +227,18 @@ const Requisition = () => {
         const feedbackMissing = [];
 
         requisitionList
-        .filter(item => ["CO", "FA"].includes(item.status))
-        .forEach(item => {
-            if (Number(item.initiatingOfficer) !== Number(empId)) return;
+            .filter(item => ["CO", "FA"].includes(item.status))
+            .forEach(item => {
+                if (Number(item.initiatingOfficer) !== Number(empId)) return;
 
-            const feedbackExists = feedbackList?.some(
-                feedback => Number(feedback?.requisitionId) === Number(item?.requisitionId)
-            );
+                const feedbackExists = feedbackList?.some(
+                    feedback => Number(feedback?.requisitionId) === Number(item?.requisitionId)
+                );
 
-            if (!feedbackExists) {
-                feedbackMissing.push(item.requisitionNumber);
-            }
-        });
+                if (!feedbackExists) {
+                    feedbackMissing.push(item.requisitionNumber);
+                }
+            });
 
         if (feedbackMissing.length > 0) {
             Swal.fire({
@@ -337,6 +344,11 @@ const Requisition = () => {
         }
     };
 
+    const handleChangeTab = (tab) => {
+        setSelectedTab(tab);
+    };
+
+
     return (
         <div>
             <Navbar />
@@ -350,6 +362,42 @@ const Requisition = () => {
                 </span>
             </h3>
 
+            <div className="mt-5 d-flex justify-content-center">
+                <div className="p-2 bg-light rounded-pill border d-inline-flex gap-2 shadow-sm">
+
+                    {/* Free Requisition */}
+                    <button
+                        type="button"
+                        onClick={() => handleChangeTab("free")}
+                        className={`btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 transition-all ${selectedTab === "free"
+                                ? "btn-warning border-0 shadow"
+                                : "btn-light border-0 text-secondary"
+                            }`}
+                    >
+                        <span className="fw-bold">Free Requisition</span>
+                        <span className={`badge rounded-pill ${selectedTab === "free" ? "bg-dark" : "bg-secondary text-white"}`}>
+                            {freeList.length}
+                        </span>
+                    </button>
+
+                    {/* Paid Requisition */}
+                    <button
+                        type="button"
+                        onClick={() => handleChangeTab("paid")}
+                        className={`btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 transition-all ${selectedTab === "paid"
+                                ? "btn-success border-0 shadow text-white"
+                                : "btn-light border-0 text-secondary"
+                            }`}
+                    >
+                        <span className="fw-bold">Paid Requisition</span>
+                        <span className={`badge rounded-pill ${selectedTab === "paid" ? "bg-white text-success" : "bg-secondary text-white"}`}>
+                            {paidList.length}
+                        </span>
+                    </button>
+
+                </div>
+            </div>
+            
             <div id="card-body" className="p-2 mt-2">
                 {<Datatable columns={columns} data={mappedData()} />}
             </div>

@@ -45,7 +45,7 @@ const Journal = () => {
 
     const fetchJournals = async () => {
         try {
-            const response = await getJournalList();
+            const response = await getJournalList(empId, roleName);
             setJournalList(response?.data || []);
         } catch (error) {
             console.error("Error fetching journals:", error);
@@ -55,7 +55,7 @@ const Journal = () => {
 
     const [initialValues, setInitialValues] = useState({
         journalId: null,
-        empId: "",
+        empId: empId || "",
         titleOfPaper: "",
         journalType: "",
         journalName: "",
@@ -198,7 +198,7 @@ const Journal = () => {
         setShowModal(true);
         setInitialValues({
             journalId: null,
-            empId: "",
+            empId: empId || "",
             titleOfPaper: "",
             journalType: "",
             journalName: "",
@@ -277,7 +277,7 @@ const Journal = () => {
 
                                                 <div className="row g-3 text-start">
 
-                                                    <div className="col-md-6">
+                                                    <div className="col-md-5">
                                                         <label className="form-label">Employee
                                                             <span className="text-danger">*</span>
                                                         </label>
@@ -296,11 +296,12 @@ const Journal = () => {
                                                         <ErrorMessage name="empId" component="div" className="invalid-msg" />
                                                     </div>
 
-                                                    <div className="col-md-6">
+                                                    <div className="col-md-7">
                                                         <label className="form-label">Title of Paper
                                                             <span className="text-danger">*</span>
                                                         </label>
                                                         <Field
+                                                        as="textarea"
                                                             name="titleOfPaper"
                                                             className="form-control"
                                                         />
@@ -362,7 +363,7 @@ const Journal = () => {
 
                                                     <div className="col-md-6">
                                                         <label className="form-label">
-                                                            Publication Fee <span className="text-danger">*</span>
+                                                            Publication Fee (In Rs.)<span className="text-danger">*</span>
                                                         </label>
                                                         <Field
                                                             type="number"

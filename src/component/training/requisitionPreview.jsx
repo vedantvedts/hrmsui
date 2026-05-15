@@ -171,8 +171,17 @@ const RequisitionPreview = ({ reqData, setShowModal }) => {
                                     <div className="col-md-12 view-field">
                                         {reqData.courseType === "Conference" &&
                                             <>
-                                                <span className="view-label">Course Type : {reqData.courseType}</span>
-                                                <span className="view-label">Paper present in conference, if any : {reqData.isPaperPresent === "Y" ? "YES" : "NO"}</span>
+                                                <div className="view-label">Course Type :
+                                                    <span className="view-paper">{reqData.courseType}</span>
+                                                </div>
+                                                <div className="view-label">Paper present in conference, if any :
+                                                    <span className="view-paper">{reqData.isPaperPresent === "Y" ? "YES" : "NO"}</span>
+                                                </div>
+                                                {reqData.titleOfPaper &&
+                                                    <div className="view-label">Title of Paper :
+                                                        <span className="view-paper">{reqData.titleOfPaper || "-"}</span>
+                                                    </div>
+                                                }
                                                 {reqData.isPaperPresent === "Y" && (
                                                     <div className="row g-2 mt-1">
                                                         <div className="col-md-4 file-item">

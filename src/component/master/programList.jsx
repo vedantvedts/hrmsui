@@ -615,7 +615,7 @@ const ProgramList = () => {
                                                     {values.isFree === "N" &&
                                                         <>
                                                             <div className="col-md-3 mb-3">
-                                                                <label className="form-label">Offline RE Fee (₹)
+                                                                <label className="form-label">Offline Fee (₹)
                                                                     <span className="text-danger">*</span>
                                                                 </label>
                                                                 <Field className="form-control" name="offlineRegistrationFee" type="number" />
@@ -623,7 +623,7 @@ const ProgramList = () => {
                                                             </div>
 
                                                             <div className="col-md-3 mb-3">
-                                                                <label className="form-label">Online RE Fee (₹)</label>
+                                                                <label className="form-label">Online Fee (₹)</label>
                                                                 <Field className="form-control" name="onlineRegistrationFee" type="number" />
                                                                 <ErrorMessage name="onlineRegistrationFee" component="div" className="invalid-msg" />
                                                             </div>

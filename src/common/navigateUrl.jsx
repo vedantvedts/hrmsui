@@ -56,10 +56,12 @@ function AppRoutes() {
     const handleMessage = async (event) => {
       // 1. Security check
       const URLs = config.URLs;
+      console.log("event.origin",event.origin)
       if (!URLs.includes(event.origin)) return;
 
       if (event.data.user) {
 
+        console.log(event.data.user.username,"event.data.user.username")
         // 2. Clear everything to prevent User A's data from hanging around
         localStorage.clear();
         localStorage.setItem("user", JSON.stringify(event.data.user));

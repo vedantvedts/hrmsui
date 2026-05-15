@@ -336,6 +336,14 @@
     border-radius: 7px;
 }
 
+.view-paper {
+    font-size: 14px;
+    font-weight: 500;
+    color: #212529;
+    padding: 6px 10px;
+    border-radius: 7px;
+}
+
 .file-item span {
     font-size: 14px;
     font-weight: 600;

@@ -5,10 +5,11 @@ import { ErrorMessage, Field, Form, Formik } from "formik";
 import * as Yup from "yup";
 import DatePicker from "react-datepicker";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
-import { addMandatoryTrainingData, editMandatoryTrainingData, getMandatoryTrainingDataById } from "../../service/training.service";
-import { handleApiError } from "../../service/master.service";
+import { addMandatoryTrainingData, editMandatoryTrainingData, getMandatoryTrainingByEmpId, getMandatoryTrainingDataById } from "../../service/training.service";
+import { getEmployees, handleApiError } from "../../service/master.service";
 import Swal from "sweetalert2";
-
+import Select from "react-select";
+import { format } from "date-fns";
 
 
 const MandatoryTrainingAddEdit = () => {
@@ -17,20 +18,10 @@ const MandatoryTrainingAddEdit = () => {
     const location = useLocation();
     const mandatoryTrainingId = location.state?.mandatoryTrainingId;
     const [editData, setEditData] = useState(null);
+    const [employeeList, setEmployeeList] = useState([]);
 
+    const roleName = localStorage.getItem("roleName");
     const empId = localStorage.getItem("empId");
-    const title = localStorage.getItem("title");
-    const salutation = localStorage.getItem("salutation");
-    const empName = localStorage.getItem("empName");
-    const designationCode = localStorage.getItem("designationCode");
-
-    const formatName = () => {
-        const cleanTitle = (salutation && salutation !== "null") ? salutation : (title && title !== "null") ? title : "";
-        const cleanName = (empName && empName !== "null") ? empName : "";
-        const cleanDesignation = (designationCode && designationCode !== "null") ? `, ${designationCode}` : "";
-
-        return `${cleanTitle} ${cleanName}`.trim() + cleanDesignation;
-    };
 
     const [initialValues, setInitialValues] = useState({
         mandatoryTrainingId: null,
@@ -62,6 +53,18 @@ const MandatoryTrainingAddEdit = () => {
         }
     };
 
+    useEffect(() => {
+        fetchEmployees();
+    }, []);
+
+    const fetchEmployees = async () => {
+        try {
+            const response = await getEmployees(empId, roleName);
+            setEmployeeList(response?.data || []);
+        } catch (error) {
+            console.error("Error fetching employees:", error);
+        }
+    };
 
     useEffect(() => {
         if (editData && Object.keys(editData).length > 0) {
@@ -84,7 +87,7 @@ const MandatoryTrainingAddEdit = () => {
 
     const validationSchema = Yup.object().shape({
         mandatoryTrainingId: Yup.number().notRequired(),
-        participantId: Yup.number().notRequired(),
+        participantId: Yup.number().required("Participant is required"),
         courseName: Yup.string()
             .trim()
             .required("Course name is required")
@@ -99,7 +102,7 @@ const MandatoryTrainingAddEdit = () => {
         fromDate: Yup.date()
             .nullable()
             .required("From date is required"),
-            // .max(new Date(), "From date cannot be in the future"),
+        // .max(new Date(), "From date cannot be in the future"),
 
         toDate: Yup.date()
             .nullable()
@@ -108,7 +111,7 @@ const MandatoryTrainingAddEdit = () => {
                 Yup.ref("fromDate"),
                 "To date must be greater than or equal to From date"
             ),
-            // .max(new Date(), "To date cannot be in the future"),
+        // .max(new Date(), "To date cannot be in the future"),
 
         duration: Yup.string()
             .trim()
@@ -190,12 +193,99 @@ const MandatoryTrainingAddEdit = () => {
         }
     };
 
+    const employeeOptions = employeeList.map((emp) => ({
+        value: emp.empId,
+        label: `${emp.empName || ""}${emp.empDesigName ? ", " + emp.empDesigName : ""}`.trim(),
+    }));
+
+
+    const checkTrainingConflict = async (startDate, endDate, values, setFieldValue) => {
+        if (!startDate || !endDate || !values.participantId) return false;
+
+        const newFrom = new Date(startDate);
+        const newTo = new Date(endDate);
+
+        try {
+            const response = await getMandatoryTrainingByEmpId(values.participantId);
+            const trainings = response?.data || [];
+
+            const conflictRecord = trainings.find(item => {
+                if (Number(item.participantId) !== Number(values.participantId)) return false;
+
+                const existingFrom = new Date(item.fromDate);
+                const existingTo = new Date(item.toDate);
+
+                // Standard overlap formula: (StartA <= EndB) and (EndA >= StartB)
+                return newFrom <= existingTo && newTo >= existingFrom;
+            });
+
+            if (conflictRecord) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "⚠ Training Conflict",
+                    html: `
+                    <div style="text-align:left; font-size:14px">
+                        <p>This employee is already scheduled for <b>${conflictRecord.courseName}</b> during this period:</p>
+                        <div style="background:#fff3cd; padding:8px; border-radius:6px; border-left:4px solid #ffc107;">
+                            ${format(new Date(conflictRecord.fromDate), "dd-MM-yyyy")} to ${format(new Date(conflictRecord.toDate), "dd-MM-yyyy")}
+                        </div>
+                    </div>
+                `,
+                    confirmButtonColor: "#f57c00",
+                });
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error checking training conflict:", error);
+            // Optional: Show an alert if the API fails
+            return false;
+        }
+    };
+
+    const handleFromDateChange = async (date, values, setFieldValue) => {
+        setFieldValue("fromDate", date);
+
+        // If toDate already exists, check for a conflict with the new range
+        if (values.toDate) {
+            const isConflict = await checkTrainingConflict(date, values.toDate, values, setFieldValue);
+            if (isConflict) {
+                setFieldValue("fromDate", null);
+                setFieldValue("duration", "");
+            } else {
+                calculateDuration(date, values.toDate, setFieldValue);
+            }
+        }
+    };
+
+    const handleToDateChange = async (date, values, setFieldValue) => {
+        if (!values.fromDate) {
+            Swal.fire({ icon: "warning", title: "Select From Date First" });
+            return;
+        }
+
+        if (new Date(date) < new Date(values.fromDate)) {
+            Swal.fire({ icon: "error", title: "To Date cannot be earlier than From Date" });
+            return;
+        }
+
+        const isConflict = await checkTrainingConflict(values.fromDate, date, values, setFieldValue);
+
+        if (isConflict) {
+            setFieldValue("toDate", null);
+            setFieldValue("duration", "");
+        } else {
+            setFieldValue("toDate", date);
+            calculateDuration(values.fromDate, date, setFieldValue);
+        }
+    };
+
 
     return (
         <div>
             <Navbar />
 
-            <h3 className="fancy-heading mt-3">
+            <h3 className="fancy-heading mt-4">
                 {mandatoryTrainingId ? "Edit Mandatory Training" : "Add  Mandatory Training"}
                 <span className="underline-glow">
                     <span className="pulse-dot"></span>
@@ -205,15 +295,6 @@ const MandatoryTrainingAddEdit = () => {
             </h3>
 
             <div className="p-5">
-                <div className="d-flex justify-content-between align-items-center p-2 mb-2 bg-light rounded-3 shadow-sm">
-                    <div className="d-flex align-items-center">
-                        <span className="badge rounded-pill bg-primary-subtle text-primary me-2 px-3 py-2">
-                            <i className="bi bi-person-fill me-1"></i> Participant
-                        </span>
-                        <span className="fw-bold text-dark">{formatName()}</span>
-                    </div>
-                </div>
-
                 <div className="card p-3 shadow-sm border-rounded">
                     <Formik
                         initialValues={initialValues}
@@ -223,9 +304,30 @@ const MandatoryTrainingAddEdit = () => {
                     >
                         {({ values, setFieldValue, isSubmitting, setFieldTouched }) => (
                             <Form autoComplete="off">
-                                <div className="row g-4 custom-modal-body p-3">
+                                <div className="row g-3 custom-modal-body p-3">
+
 
                                     <div className="col-md-3">
+                                        <label className="form-label">Participant
+                                            <span className="text-danger">*</span>
+                                        </label>
+                                        <Select
+                                            options={employeeOptions}
+                                            value={employeeOptions.find(
+                                                (option) => option.value === Number(values.participantId)
+                                            ) || null}
+                                            onChange={(selectedOption) => {
+                                                setFieldValue("participantId", selectedOption?.value || null);
+                                            }}
+                                            placeholder="Select Participant"
+                                            isSearchable
+                                            isClearable
+                                        />
+                                        <ErrorMessage name="participantId" component="div" className="text-danger small" />
+                                    </div>
+
+
+                                    <div className="col-md-5">
                                         <label className="form-label">Name of the Course
                                             <span className="text-danger">*</span>
                                         </label>
@@ -242,6 +344,14 @@ const MandatoryTrainingAddEdit = () => {
                                     </div>
 
                                     <div className="col-md-2">
+                                        <label className="form-label">Organized By
+                                            <span className="text-danger">*</span>
+                                        </label>
+                                        <Field name="organizer" type="text" className="form-control" />
+                                        <ErrorMessage name="organizer" component="div" className="invalid-msg" />
+                                    </div>
+
+                                    <div className="col-md-2">
                                         <label className="form-label">From Date
                                             <span className="text-danger">*</span>
                                         </label>
@@ -249,10 +359,7 @@ const MandatoryTrainingAddEdit = () => {
                                             id="fromDate"
                                             name="fromDate"
                                             selected={values.fromDate}
-                                            onChange={(date) => {
-                                                setFieldValue("fromDate", date);
-                                                calculateDuration(date, values.toDate, setFieldValue);
-                                            }}
+                                            onChange={(date) => handleFromDateChange(date, values, setFieldValue)}
                                             className="form-control"
                                             placeholderText="Choose Date"
                                             dateFormat="dd-MM-yyyy"
@@ -272,10 +379,7 @@ const MandatoryTrainingAddEdit = () => {
                                             id="toDate"
                                             name="toDate"
                                             selected={values.toDate}
-                                            onChange={(date) => {
-                                                setFieldValue("toDate", date);
-                                                calculateDuration(values.fromDate, date, setFieldValue);
-                                            }}
+                                            onChange={(date) => handleToDateChange(date, values, setFieldValue)}
                                             className="form-control"
                                             placeholderText="Choose Date"
                                             dateFormat="dd-MM-yyyy"
@@ -295,13 +399,6 @@ const MandatoryTrainingAddEdit = () => {
                                         <ErrorMessage name="duration" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-2">
-                                        <label className="form-label">Organized By
-                                            <span className="text-danger">*</span>
-                                        </label>
-                                        <Field name="organizer" type="text" className="form-control" />
-                                        <ErrorMessage name="organizer" component="div" className="invalid-msg" />
-                                    </div>
 
                                     <div className="col-md-2">
                                         <label className="form-label">Registration Fee (₹)
@@ -331,7 +428,7 @@ const MandatoryTrainingAddEdit = () => {
                                     </div>
 
 
-                                    <div className="col-md-5">
+                                    <div className="col-md-7">
                                         <label className="form-label">Remarks</label>
                                         <Field name="remarks" type="text" className="form-control" />
                                         <ErrorMessage name="remarks" component="div" className="invalid-msg" />

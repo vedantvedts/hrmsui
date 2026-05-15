@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../navbar/Navbar";
 import styles from "./AllReportsTemplate.module.css";
 import { Tooltip } from "react-tooltip";
@@ -10,17 +10,18 @@ import DatePicker from "react-datepicker";
 const REPORTS_LIST = [
     { id: "1", name: "Nominal Roll" },
     { id: "2", name: "Training Report (Course)" },
-    { id: "3", name: "Training Report (Seminar/Symposia/Conferences/Workshop)" },
+    { id: "3", name: "Training Report(s) (Seminar/Symposium/Conference/Workshop)" },
     { id: "4", name: "In-House CEP" },
     { id: "5", name: "Details of Sponsorship to Higher Degree M.Tech" },
     { id: "6", name: "Details of Sponsorship to Higher Degree Ph.D" },
-    { id: "7", name: "HR Distribution Project wsie Tech/Non Tech Deployment of DRDS & DRTC" },
+    { id: "7", name: "HR Distribution Project Wise Tech/Non Tech Deployment of DRDS & DRTC" },
     { id: "8", name: "Annual Training Report" },
     { id: "9", name: "Detailed of Research Paper in International Journals" },
-    { id: "10", name: "Detailed of Research Paper in Seminars/ Symposia/ Conferences" },
+    { id: "10", name: "Detailed of Research Paper in Seminar/Symposium/Conference/Workshop" },
     { id: "11", name: "Budget Expenditure" },
     { id: "12", name: "Gender Budgeting" },
     { id: "13", name: "Training of SC/ST Employees" },
+    { id: "14", name: "Mandatory Training Report" },
 ];
 
 const today = new Date();
@@ -53,6 +54,12 @@ const AllReportsTemplate = () => {
         report.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    useEffect(() => {
+        const defaultDates = getFinancialYearDates();
+
+        setFromDate(defaultDates.from);
+        setToDate(defaultDates.to);
+    }, [activeReport]);
 
     return (
         <>
@@ -104,7 +111,7 @@ const AllReportsTemplate = () => {
                                     </h3>
 
                                     {/* Right Side Date Pickers */}
-                                    {["4", "11"].includes(activeReport) && (
+                                    {["2","3","4","5","6","7","8","10","11","14"].includes(activeReport) && (
                                         <div className="d-flex align-items-center gap-2">
 
                                             <DatePicker

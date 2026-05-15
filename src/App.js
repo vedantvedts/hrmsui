@@ -13,7 +13,7 @@ import IdleTimeoutHandler from './common/IdleTimeoutHandler';
 function App() {
   return (
     <div className="App hrms-font">
-      <IdleTimeoutHandler timeout={3600000}>
+      <IdleTimeoutHandler timeout={300000} warningTime={30000}>
         <RoleAccessProvider>
           <AppRoutes />
         </RoleAccessProvider>

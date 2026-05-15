@@ -40,7 +40,7 @@ export const REPORT_CONFIGS = {
     fileName: "Training Report (Course)",
     columns: [
       { name: "SN", selector: (row) => row.sn, sortable: false, align: 'text-center' },
-      { name: "Pis No", selector: (row) => row.empNo, sortable: true, align: 'text-center' },
+      { name: "PIS No", selector: (row) => row.empNo, sortable: true, align: 'text-center' },
       { name: "Cadre", selector: (row) => row.desigCadre, sortable: true, align: 'text-center' },
       { name: "Employee Name", selector: (row) => row.initiatingOfficerName, sortable: true, align: 'text-left', width: "18%" },
       { name: "Designation", selector: (row) => row.empDesigName, sortable: true, align: 'text-center' },
@@ -60,10 +60,10 @@ export const REPORT_CONFIGS = {
   },
 
   "3": {
-    fileName: "Training Report (Seminar/Symposia/Conferences/Workshop)",
+    fileName: "Training Report(s) (Seminar/Symposium/Conference/Workshop)",
     columns: [
       { name: "SN", selector: (row) => row.sn, sortable: false, align: 'text-center' },
-      { name: "Pis No", selector: (row) => row.empNo, sortable: true, align: 'text-center' },
+      { name: "PIS No", selector: (row) => row.empNo, sortable: true, align: 'text-center' },
       { name: "Cadre", selector: (row) => row.desigCadre, sortable: true, align: 'text-center' },
       { name: "Employee Name", selector: (row) => row.initiatingOfficerName, sortable: true, align: 'text-left', width: "18%" },
       { name: "Designation", selector: (row) => row.empDesigName, sortable: true, align: 'text-center' },
@@ -146,7 +146,7 @@ export const REPORT_CONFIGS = {
   },
 
   "7": {
-    fileName: "HR Distribution Project wsie Tech/Non Tech Deployment of DRDS & DRTC",
+    fileName: "HR Distribution Project Wise Tech/Non Tech Deployment of DRDS & DRTC",
     columns: [
       { name: "SN", selector: (row) => row.sn, sortable: false, align: 'text-center' },
       { name: "PIS No", selector: (row) => row.empNo, sortable: true, align: 'text-left' },
@@ -211,22 +211,22 @@ export const REPORT_CONFIGS = {
   },
 
   "10": {
-    fileName: "Detailed of Research Paper in Seminars/ Symposia/ Conferences",
+    fileName: "Detailed of Research Paper in Seminar/Symposium/Conference/Workshop",
     columns: [
       { name: "SN", selector: (row) => row.sn, sortable: false, align: 'text-center' },
-      { name: "International/National", selector: (row) => row.level, sortable: true, align: 'text-center' },
+      { name: "International/National", selector: (row) => row.courseLevel, sortable: true, align: 'text-center' },
       { name: "PIS No", selector: (row) => row.empNo, sortable: true, align: 'text-center' },
       { name: "Cadre", selector: (row) => row.desigCadre, sortable: true, align: 'text-center' },
-      { name: "Employee Name", selector: (row) => row.initiatingOfficerName, sortable: true, align: 'text-left', width: "18%" },
-      { name: "Designation", selector: (row) => row.empDesigCode, sortable: true, align: 'text-left', width: "7%" },
+      { name: "Employee Name", selector: (row) => row.initiatingOfficerName, sortable: true, align: 'text-left' },
+      { name: "Designation", selector: (row) => row.empDesigName, sortable: true, align: 'text-left' },
       { name: "Title of Paper", selector: (row) => row.titleOfPaper, sortable: true, align: 'text-left' },
-      { name: "Name of conference", selector: (row) => row.journal, sortable: true, align: 'text-left' },
-      { name: "Organizing agency", selector: (row) => row.volume, sortable: true, align: 'text-center' },
-      { name: "City", selector: (row) => row.impact, sortable: true, align: 'text-left' },
-      { name: "Duration (In Days)", selector: (row) => row.volume, sortable: true, align: 'text-center' },
-      { name: "Registration Fee, if any (Rs.)", selector: (row) => row.volume, sortable: true, align: 'text-end' },
+      { name: "Name of conference", selector: (row) => row.courseName, sortable: true, align: 'text-left' },
+      { name: "Organizing agency", selector: (row) => row.organizer, sortable: true, align: 'text-center' },
+      { name: "City", selector: (row) => row.venue, sortable: true, align: 'text-left' },
+      { name: "Duration (In Days)", selector: (row) => row.duration, sortable: true, align: 'text-center' },
+      { name: "Registration Fee, if any (Rs.)", selector: (row) => formatIndianRupee(row.registrationFee), sortable: true, align: 'text-end' },
     ],
-    fetchUrl: "research-paper-course",
+    fetchUrl: "research-paper",
   },
 
   "11": {
@@ -245,6 +245,26 @@ export const REPORT_CONFIGS = {
     fileName: "Training of SC/ST Employees",
     columns: [],
     fetchUrl: "training-scst",
+  },
+
+  "14": {
+    fileName: "Mandatory Training Report",
+    columns: [
+      { name: "SN", selector: (row) => row.sn, sortable: false, align: 'text-center' },
+      { name: "PIS No", selector: (row) => row.empNo, sortable: true, align: 'text-center' },
+      { name: "Cadre", selector: (row) => row.desigCadre, sortable: true, align: 'text-center' },
+      { name: "Employee Name", selector: (row) => row.participantName, sortable: true, align: 'text-left', width: "18%" },
+      { name: "Designation", selector: (row) => row.empDesigName, sortable: true, align: 'text-center' },
+      { name: "Division/Group", selector: (row) => row.empDivCode, sortable: true, align: 'text-center' },
+      { name: "Title of the Course", selector: (row) => row.courseName, sortable: true, align: 'text-left', width: "15%" },
+      { name: "Course Type", selector: (row) => row.courseType, sortable: true, align: 'text-center' },
+      { name: "Organizing Agency", selector: (row) => row.organizer, sortable: true, align: 'text-center' },
+      { name: "City", selector: (row) => row.venue, sortable: true, align: 'text-center' },
+      { name: "Period (In days)", selector: (row) => row.duration, sortable: true, align: 'text-center' },
+      { name: "Remarks", selector: (row) => row.remarks, sortable: true, align: 'text-left' },
+      { name: "Registration Fee (Rs.)", selector: (row) => formatIndianRupee(row.registrationFee), sortable: true, align: 'text-end' },
+    ],
+    fetchUrl: "mandatory-training",
   },
 
 };

@@ -410,7 +410,7 @@ const AnnualTrainingReportViewer = ({ reportData = [] }) => {
   };
 
   return (
-    <div className="container-fluid mt-4">
+    <div className="mt-4">
       <div className="card shadow">
 
         <div className={`d-flex align-items-center ${styles.gap2}`}>

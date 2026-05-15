@@ -14,8 +14,6 @@ const DynamicReportViewer = ({ reportId, fromDate, toDate }) => {
   const formatFromDate = format(new Date(fromDate), 'yyyy-MM-dd');
   const formatToDate = format(new Date(toDate), 'yyyy-MM-dd');
 
-  console.log("fromDate****", formatFromDate + "-----" + formatToDate);
-
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const config = REPORT_CONFIGS[reportId];
@@ -26,7 +24,7 @@ const DynamicReportViewer = ({ reportId, fromDate, toDate }) => {
       try {
         let url = config.fetchUrl;
 
-        if (["4", "11"].includes(reportId) && formatFromDate && formatToDate) {
+        if (["2","3","4","5","6","7","8","10","11","14"].includes(reportId) && formatFromDate && formatToDate) {
           url = `${url}?fromDate=${formatFromDate}&toDate=${formatToDate}`;
         }
         const response = await getReportData(url);
