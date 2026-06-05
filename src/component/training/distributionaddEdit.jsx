@@ -156,7 +156,7 @@ const AddEditDistributionComponent = () => {
 
             return {
                   value: emp.empId,
-                  label: `${prefix ? prefix + " " : ""}${emp.empName || ""}${emp.empDesigName ? ", " + emp.empDesigName : ""}`.trim(),
+                  label: `${emp.empName || ""}${emp.empDesigName ? ", " + emp.empDesigName : ""}`.trim(),
             };
       });
 
@@ -192,7 +192,7 @@ const AddEditDistributionComponent = () => {
                         nonTechActivity: values.nonTechActivity.trim(),
                   };
 
-                  const confirm = await AlertConfirmation({ title: "Are you sure!", message: "" });
+                  const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: "" });
                   if (!confirm) return;
 
                   const response = isEdit
@@ -248,7 +248,7 @@ const AddEditDistributionComponent = () => {
                   }))
             };
             try {
-                  const confirm = await AlertConfirmation({ title: "Are you sure!", message: "" });
+                  const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: "" });
                   if (!confirm) return;
 
                   const response = await addProjectRoleIds(payload);
@@ -355,7 +355,7 @@ const AddEditDistributionComponent = () => {
 
 
                                                                   <div className="col-md-4">
-                                                                        <label className="form-label">AO Officer Name</label>
+                                                                        <label className="form-label">IO/AO Officer Name</label>
                                                                         <Select
                                                                               options={officerOptions}
                                                                               value={employeeOptions.find(

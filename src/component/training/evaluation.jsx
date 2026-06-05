@@ -114,7 +114,7 @@ const Evaluation = () => {
 
     const handleSubmit = async (values, { resetForm, setSubmitting }) => {
         try {
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }
@@ -206,7 +206,7 @@ const Evaluation = () => {
                 initiator: emp.empId,
                 empName: emp.empName,
                 designation: emp.empDesigName,
-                title: emp.title ? emp.title : (emp.salutation ? emp.salutation : ""),
+                title: "",
                 evaluation: mergedPrograms
             });
         }

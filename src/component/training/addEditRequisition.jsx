@@ -3,7 +3,7 @@ import Navbar from "../navbar/Navbar";
 import DatePicker from "react-datepicker";
 import Select from "react-select";
 import { useEffect, useRef, useState } from "react";
-import { addEligible, addProgram, addRequisitionData, getAgencies, getCourseList, getCourseTypeList, getEligibilities, getRequisitionById, reqFileDownload, updateRequisitionData } from "../../service/training.service";
+import { addRequisitionData, getAgencies, getCourseList, getJournalList, getRequisitionById, reqFileDownload, updateRequisitionData } from "../../service/training.service";
 import Swal from "sweetalert2";
 import { handleApiError } from "../../service/master.service";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
 import { FaCheckCircle } from "react-icons/fa";
 import { BsFileEarmark } from "react-icons/bs";
+import CourseModal from "../master/courseModal";
 
 
 const AddEditRequisition = () => {
@@ -20,18 +21,10 @@ const AddEditRequisition = () => {
     const location = useLocation();
     const requisitionId = location.state?.requisitionId;
 
-    const [agencyList, setAgencyList] = useState([]);
-    const [programList, setProgramList] = useState([]);
-    const [eligibilityList, setEligibilityList] = useState([]);
-    const [showProgramModal, setShowProgramModal] = useState(false);
-    const [newEligibilityId, setNewEligibilityId] = useState(null);
-    const [newProgramId, setNewProgramId] = useState(null);
-    const [showAddEligibility, setShowAddEligibility] = useState(false);
-    const [eligibilityInput, setEligibilityInput] = useState("");
-    const [eligibilityError, setEligibilityError] = useState("");
+    const [courseList, setCourseList] = useState([]);
+    const [organizerList, setOrganizerList] = useState([]);
 
     const formikRef = useRef(null);
-    const courseFormikRef = useRef(null);
 
     const empId = localStorage.getItem("empId");
     const title = localStorage.getItem("title");
@@ -42,7 +35,9 @@ const AddEditRequisition = () => {
     const [existingFiles, setExistingFiles] = useState({});
     const [feeOptions, setFeeOptions] = useState([]);
     const [reqNo, setReqNo] = useState(null);
-    const [courseTypeList, setCourseTypeList] = useState([]);
+    const [journalList, setJournalList] = useState([]);
+    const [showCourseModal, setShowCourseModal] = useState(false);
+    const [courseData, setCourseData] = useState(null);
 
     const [initialValues, setInitialValues] = useState({
         courseId: "",
@@ -51,65 +46,63 @@ const AddEditRequisition = () => {
         duration: "",
         reference: "",
         organizedBy: "",
+        courseType: "",
         modeOfPayment: "ECS",
         initiatingOfficer: Number(empId) || "",
         isSubmitted: "N",
+        isPaperPresent: "N",
         necessity: "",
         venue: "",
         offlineRegistrationFee: "",
         reason: "",
+        journalId: 0,
+        isMandatory: "N",
         multipartFileEcs: null,
         multipartFileCheque: null,
         multipartFilePan: null,
         multipartFileBrochure: null,
+        multipartCommitteeApproval: null,
+        multipartAcceptanceLetter: null,
+        multipartPaper: null,
     });
 
     useEffect(() => {
-        fetchAgencies();
         fetchPrograms();
-        fetchEligibility();
-        fetchCourseType();
+        fetchJournals();
+        fetchAgencies();
     }, []);
+
 
     const fetchAgencies = async () => {
         try {
             const response = await getAgencies();
-            setAgencyList(response?.data || []);
+            setOrganizerList(response?.data || []);
         } catch (error) {
             console.error("Error fetching agencies:", error);
-            Swal.fire("Error", "Failed to fetch agency data. Please try again later.", "error");
+            Swal.fire("Error", "Failed to fetch organizer data. Please try again later.", "error");
         }
     };
 
     const fetchPrograms = async () => {
         try {
             const response = await getCourseList(0);
-            setProgramList(response?.data || []);
+            const filteredCourses = response?.data?.filter(course => course.courseType !== "Mandatory Training") || [];
+            setCourseList(filteredCourses || []);
         } catch (error) {
             console.error("Error fetching programs:", error);
             Swal.fire("Error", "Failed to fetch program data. Please try again later.", "error");
         }
     };
 
-    const fetchEligibility = async () => {
+
+    const fetchJournals = async () => {
         try {
-            const response = await getEligibilities();
-            setEligibilityList(response?.data || []);
+            const response = await getJournalList(empId, "ROLE_USER");
+            setJournalList(response?.data || []);
         } catch (error) {
-            console.error("Error fetching eligibility:", error);
+            console.error("Error fetching journals:", error);
         }
     };
-
-    const fetchCourseType = async () => {
-        try {
-            const response = await getCourseTypeList();
-            setCourseTypeList(response?.data || []);
-        } catch (error) {
-            console.error("Error fetching course type:", error);
-            Swal.fire("Error", "Failed to fetch course type data. Please try again later.", "error");
-        }
-    };
-
 
     useEffect(() => {
         if (requisitionId) {
@@ -125,6 +118,7 @@ const AddEditRequisition = () => {
                 const data = response.data;
                 setInitialValues({
                     courseId: data.courseId || "",
+                    courseType: data.courseType || "",
                     fromDate: data.fromDate ? new Date(data.fromDate) : null,
                     toDate: data.toDate ? new Date(data.toDate) : null,
                     duration: data.duration || "",
@@ -135,12 +129,18 @@ const AddEditRequisition = () => {
                     modeOfPayment: data.modeOfPayment || "ECS",
                     initiatingOfficer: data.initiatingOfficer || "",
                     isSubmitted: data.isSubmitted || "N",
+                    isPaperPresent: data.isPaperPresent || "N",
                     necessity: data.necessity || "",
                     reason: data.reason || "",
+                    journalId: data.journalId || 0,
+                    isMandatory: data.isMandatory || "N",
                     multipartFileEcs: null,
                     multipartFileCheque: null,
                     multipartFilePan: null,
                     multipartFileBrochure: null,
+                    multipartCommitteeApproval: null,
+                    multipartAcceptanceLetter: null,
+                    multipartPaper: null,
                 });
                 const fees = [];
                 if (data.offlineRegistrationFee > 0) {
@@ -162,6 +162,9 @@ const AddEditRequisition = () => {
                     multipartFileCheque: data.fileCheque ? { name: data.fileCheque } : null,
                     multipartFilePan: data.filePan ? { name: data.filePan } : null,
                     multipartFileBrochure: data.fileBrochure ? { name: data.fileBrochure } : null,
+                    multipartCommitteeApproval: data.fileCommitteeApproval ? { name: data.fileCommitteeApproval } : null,
+                    multipartAcceptanceLetter: data.fileAcceptanceLetter ? { name: data.fileAcceptanceLetter } : null,
+                    multipartPaper: data.filePaper ? { name: data.filePaper } : null,
                 });
             } else {
                 Swal.fire("Error", "Failed to fetch requisition details. Please try again later.", "error");
@@ -204,105 +207,22 @@ const AddEditRequisition = () => {
         }
     };
 
-    const agencyOptions = agencyList.map(data => ({
-        value: data?.organizerId,
-        label: data?.organizer
-    }));
-
     const formatName = () => {
-        const cleanTitle = (title && title !== "null") ? title : (salutation && salutation !== "null") ? salutation : "";
+        const cleanTitle = (salutation && salutation !== "null") ? salutation : (title && title !== "null") ? title : "";
         const cleanName = (empName && empName !== "null") ? empName : "";
         const cleanDesignation = (designationCode && designationCode !== "null") ? `, ${designationCode}` : "";
 
         return `${cleanTitle} ${cleanName}`.trim() + cleanDesignation;
     };
 
-    const programOptions = [
+    const courseOptions = [
         { value: 0, label: "Add New", data: null },
-        ...programList.map((item) => ({
+        ...courseList.map((item) => ({
             value: item.courseId,
             label: item.courseName,
             data: item
         }))
     ];
-
-    const eligibilityOptions = [
-        { value: 0, label: "Add New" },
-        ...eligibilityList.map((item) => ({
-            value: item.eligibilityId,
-            label: item.eligibilityName
-        }))
-    ];
-
-    const handleCourseClose = () => {
-        setShowAddEligibility(false);
-        setShowProgramModal(false);
-        setEligibilityInput("");
-        setEligibilityError("");
-    };
-
-    const handleChangeEligibility = (selected) => {
-        const { setFieldValue } = courseFormikRef.current;
-
-        if (!selected) return;
-
-        if (selected.value === 0) {
-            setShowAddEligibility(true);
-            setEligibilityInput("");
-            setEligibilityError("");
-            setFieldValue("eligibilityId", null);
-            return;
-        }
-
-        setShowAddEligibility(false);
-        setFieldValue("eligibilityId", selected.value);
-    };
-
-    const validateEligibility = () => {
-        if (!eligibilityInput.trim()) {
-            setEligibilityError("Eligibility Name is required");
-            return false;
-        }
-        setEligibilityError("");
-        return true;
-    };
-
-    const handleEligibleSubmit = async () => {
-        if (!validateEligibility()) return;
-        try {
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
-            if (!confirm) return;
-
-            const response = await addEligible({ eligibilityName: eligibilityInput });
-            if (response && response.success) {
-                const newItem = response.data;
-                fetchEligibility();
-                courseFormikRef.current.setFieldValue("eligibilityId", newItem.eligibilityId);
-                setShowAddEligibility(false);
-                setEligibilityInput("");
-                fetchEligibility();
-            } else {
-                Swal.fire("Warning", response.message, "warning");
-            }
-        } catch (error) {
-            Swal.fire("Warning", handleApiError(error), "warning");
-        }
-    };
-
-    useEffect(() => {
-        if (newEligibilityId && eligibilityList.length > 0 && formikRef.current) {
-            const selectedEligible = eligibilityList.find(
-                item => item.eligibilityId === newEligibilityId
-            );
-            if (selectedEligible) {
-                handleChangeEligibility({
-                    value: selectedEligible.eligibilityId,
-                    label: selectedEligible.eligibilityName,
-                });
-                setNewEligibilityId(null);
-            }
-        }
-    }, [eligibilityList, newEligibilityId]);
 
     const SUPPORTED_FORMATS = [
         "application/pdf",
@@ -336,6 +256,7 @@ const AddEditRequisition = () => {
 
     const buildValidationSchema = (isEdit) => Yup.object().shape({
         courseId: Yup.string().required("Course is required"),
+        courseType: Yup.string().required("Course Type is required"),
         fromDate: Yup.date().required("From Date is required"),
         toDate: Yup.date()
             .required("To Date is required")
@@ -352,6 +273,11 @@ const AddEditRequisition = () => {
         reason: Yup.string().when("modeOfPayment", {
             is: "OTHERS",
             then: (schema) => schema.required("Reason is required"),
+            otherwise: (schema) => schema.nullable()
+        }),
+        journalId: Yup.string().when("isPaperPresent", {
+            is: "Y",
+            then: (schema) => schema.required("Title of Paper is required"),
             otherwise: (schema) => schema.nullable()
         }),
 
@@ -389,72 +315,42 @@ const AddEditRequisition = () => {
                     ? optionalFileValidation("Brochure file")
                     : requiredFileValidation("Brochure file"),
             otherwise: (schema) => schema.nullable()
-        })
+        }),
+
+        multipartCommitteeApproval: Yup.mixed().when("isPaperPresent", {
+            is: "Y",
+            then: () =>
+                isEdit
+                    ? optionalFileValidation("Committee Approval file")
+                    : requiredFileValidation("Committee Approval file"),
+            otherwise: (schema) => schema.nullable()
+        }),
+
+        multipartAcceptanceLetter: Yup.mixed().when("isPaperPresent", {
+            is: "Y",
+            then: () =>
+                isEdit
+                    ? optionalFileValidation("Acceptance Letter file")
+                    : requiredFileValidation("Acceptance Letter file"),
+            otherwise: (schema) => schema.nullable()
+        }),
+
+        multipartPaper: Yup.mixed().when("isPaperPresent", {
+            is: "Y",
+            then: () =>
+                isEdit
+                    ? optionalFileValidation("Paper file")
+                    : requiredFileValidation("Paper file"),
+            otherwise: (schema) => schema.nullable()
+        }),
 
     });
 
-    const programSchema = Yup.object().shape({
-        courseName: Yup.string().trim().required("Course Name is required"),
-        courseTypeId: Yup.string().required("Course Type is required"),
-        courseLevel: Yup.string().required("Course Preference is required"),
-        courseCode: Yup.string().trim().notRequired(),
-        organizerId: Yup.string().required("Organized By is required"),
-        eligibilityId: Yup.string().required("Eligibility is required"),
-        fromDate: Yup.date().required("From Date is required"),
-        toDate: Yup.date()
-            .required("To Date is required")
-            .min(Yup.ref("fromDate"), "To Date must be after From Date"),
-        offlineRegistrationFee: Yup.number()
-            .typeError("Amount must be a number")
-            .transform((value, originalValue) =>
-                originalValue === "" ? undefined : value
-            )
-            .required("Offline Fee is required")
-            .min(0, "Amount cannot be negative"),
-        onlineRegistrationFee: Yup.number()
-            .typeError("Amount must be a number")
-            .min(0, "Amount cannot be negative")
-            .nullable()
-            .transform((value, originalValue) => originalValue === "" ? null : value),
-        venue: Yup.string().trim().required("Venue is required"),
-        noOfNomination: Yup.string()
-            .required("No of Nomination is required")
-            .min(0, "Nomination cannot be negative"),
-    });
-
-    const handleProgramSubmit = async (values, { resetForm, setSubmitting }) => {
-        try {
-            const dto = {
-                ...values,
-                fromDate: format(new Date(values.fromDate), "yyyy-MM-dd"),
-                toDate: format(new Date(values.toDate), "yyyy-MM-dd"),
-            };
-
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
-            if (!confirm) {
-                return;
-            }
-            const response = await addProgram(dto);
-            if (response && response.success) {
-                const createdId = response.data.courseId;
-                setShowProgramModal(false);
-                resetForm();
-                setNewProgramId(createdId);
-                fetchPrograms();
-            } else {
-                Swal.fire("Warning", response.message, "warning");
-            }
-        } catch (error) {
-            Swal.fire("Warning", handleApiError(error), "warning");
-        } finally {
-            setSubmitting(false);
-        }
-    };
 
     useEffect(() => {
-        if (newProgramId && programList.length > 0 && formikRef.current) {
-            const selectedProgram = programList.find(
-                item => item.courseId === newProgramId
+        if (courseData && courseList.length > 0 && formikRef.current) {
+            const selectedProgram = courseList.find(
+                item => item.courseId === courseData.courseId
             );
             if (selectedProgram) {
                 handleChaneProgram({
@@ -462,10 +358,11 @@ const AddEditRequisition = () => {
                     label: selectedProgram.courseName,
                     data: selectedProgram
                 });
-                setNewProgramId(null);
+                setCourseData(null);
             }
         }
-    }, [programList, newProgramId]);
+    }, [courseList, courseData]);
+
 
     const handleChaneProgram = (selected) => {
 
@@ -475,42 +372,43 @@ const AddEditRequisition = () => {
 
         // If Add New clicked
         if (selected.value === 0) {
-            setShowProgramModal(true);
+            setShowCourseModal(true);
             return;
         }
 
-        const programData = selected.data;
-        if (!programData) return;
+        const selectCourseData = selected.data;
+        if (!selectCourseData) return;
 
-        const newOrgData = agencyList.find(
-            item => item.organizerId === programData.organizerId
+        const newOrgData = organizerList.find(
+            item => item.organizerId === selectCourseData.organizerId
         );
 
-        const fromDate = new Date(programData.fromDate);
-        const toDate = new Date(programData.toDate);
+        const fromDate = new Date(selectCourseData.fromDate);
+        const toDate = new Date(selectCourseData.toDate);
 
         setFieldValue("courseId", selected.value);
         setFieldValue("fromDate", fromDate);
         setFieldValue("toDate", toDate);
         setFieldValue("organizedBy", newOrgData ? newOrgData.organizer : "");
-        setFieldValue("venue", programData ? programData.venue : "");
-        setFieldValue("offlineRegistrationFee", programData ? programData.offlineRegistrationFee : 0);
-        setFieldValue("onlineRegistrationFee", programData ? programData.onlineRegistrationFee : 0);
+        setFieldValue("courseType", selectCourseData ? selectCourseData.courseType : "");
+        setFieldValue("venue", selectCourseData ? selectCourseData.venue : "");
+        setFieldValue("offlineRegistrationFee", selectCourseData ? selectCourseData.offlineRegistrationFee : 0);
+        setFieldValue("onlineRegistrationFee", selectCourseData ? selectCourseData.onlineRegistrationFee : 0);
         setFieldValue("reference", newOrgData ? `${newOrgData.organizer} - Calendar` : "");
 
         calculateDuration(fromDate, toDate, setFieldValue);
 
         const fees = [];
-        if (programData.offlineRegistrationFee > 0) {
+        if (selectCourseData.offlineRegistrationFee > 0) {
             fees.push({
-                value: programData.offlineRegistrationFee,
-                label: `Offline - ₹${programData.offlineRegistrationFee}`,
+                value: selectCourseData.offlineRegistrationFee,
+                label: `Offline - ₹${selectCourseData.offlineRegistrationFee}`,
             });
         }
-        if (programData.onlineRegistrationFee > 0) {
+        if (selectCourseData.onlineRegistrationFee > 0) {
             fees.push({
-                value: programData.onlineRegistrationFee,
-                label: `Online - ₹${programData.onlineRegistrationFee}`,
+                value: selectCourseData.onlineRegistrationFee,
+                label: `Online - ₹${selectCourseData.onlineRegistrationFee}`,
             });
         }
         setFeeOptions(fees);
@@ -540,12 +438,15 @@ const AddEditRequisition = () => {
                 requisitionId: requisitionId || null,
             }
 
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }
             const response = requisitionId ? await updateRequisitionData(dto) : await addRequisitionData(dto);
             if (response && response.success) {
+
+                const tab = Number(values.offlineRegistrationFee) > 0 ? "paid" : "free";
+
                 Swal.fire({
                     icon: "success",
                     title: "Success",
@@ -554,7 +455,7 @@ const AddEditRequisition = () => {
                     timer: 1500,
                 });
                 resetForm();
-                navigate("/requisition");
+                navigate("/requisition", { state: { selectedTab: tab } });
             } else {
                 Swal.fire("Warning", response.message, "warning");
             }
@@ -565,15 +466,11 @@ const AddEditRequisition = () => {
         }
     };
 
-    const courseTypeOptions = courseTypeList.map(data => ({
-        value: data?.courseTypeId,
-        label: data?.courseType
+    const journalOptions = journalList.map(data => ({
+        value: data?.journalId,
+        label: data?.titleOfPaper
     }));
 
-    const courseLevelOptions = [
-        { value: "National", label: "National" },
-        { value: "International", label: "International" },
-    ];
 
     return (
         <div>
@@ -622,14 +519,20 @@ const AddEditRequisition = () => {
                                         <label className="form-label">Name of the Course</label>
                                         <div className="text-start">
                                             <Select
-                                                options={programOptions}
-                                                value={programOptions.find((item) => item.value === values.courseId) || null}
-                                                placeholder="Select Program"
+                                                options={courseOptions}
+                                                value={courseOptions.find((item) => item.value === values.courseId) || null}
+                                                placeholder="Select Course"
                                                 isSearchable
                                                 onChange={(selected) => handleChaneProgram(selected)}
                                             />
                                         </div>
                                         <ErrorMessage name="courseId" component="div" className="invalid-msg" />
+                                    </div>
+
+                                    <div className="col-md-2">
+                                        <label className="form-label">Course Type</label>
+                                        <Field name="courseType" type="text" className="form-control" disabled />
+                                        <ErrorMessage name="courseType" component="div" className="invalid-msg" />
                                     </div>
 
                                     <div className="col-md-2">
@@ -676,13 +579,13 @@ const AddEditRequisition = () => {
                                         <ErrorMessage name="toDate" component="div" className="text-danger small" />
                                     </div>
 
-                                    <div className="col-md-2">
-                                        <label className="form-label">Duration (In Days)</label>
+                                    <div className="col-md-1">
+                                        <label className="form-label">Duration</label>
                                         <Field name="duration" type="text" className="form-control" placeholder="Duration" disabled />
                                         <ErrorMessage name="duration" component="div" className="invalid-msg" />
                                     </div>
 
-                                    <div className="col-md-3">
+                                    <div className="col-md-2">
                                         <label className="form-label">Organized By</label>
                                         <Field name="organizedBy" type="text" className="form-control" disabled />
                                         <ErrorMessage name="organizedBy" component="div" className="invalid-msg" />
@@ -780,39 +683,8 @@ const AddEditRequisition = () => {
                                         <ErrorMessage name="modeOfPayment" component="div" className="invalid-msg" />
                                     </div>
 
-                                    {/* <div className="col-md-4">
-                                        <label className="form-label">Initiating Officer</label>
-                                        <Select
-                                            options={employeeOptions}
-                                            value={employeeOptions.find((item) => item.value === Number(values.initiatingOfficer)) || null}
-                                            onChange={(option) => setFieldValue("initiatingOfficer", option ? option.value : "")}
-                                            placeholder="Select Officer"
-                                            isSearchable
-                                        />
-                                        <ErrorMessage name="initiatingOfficer" component="div" className="invalid-msg" />
-                                    </div> */}
-                                    {/* 
-                                    {values.offlineRegistrationFee > 30000 &&
-                                        <>
-                                            <div className="col-md-4 mt-4">
-                                                <label className="form-label">Whether the present theme has been reflected in the annual training calendar</label>
-                                                <Field name="presentTheme" type="text" className="form-control" />
-                                                <ErrorMessage name="presentTheme" component="div" className="invalid-msg" />
-                                            </div>
-                                            <div className="col-md-5 mt-4">
-                                                <label className="form-label">List the application of benefits w.r.t individuals assignments</label>
-                                                <Field name="application" as="textarea" className="form-control" />
-                                                <ErrorMessage name="application" component="div" className="invalid-msg" />
-                                            </div>
-                                            <div className="col-md-3 mt-4">
-                                                <label className="form-label">Present area of responsibility and role</label>
-                                                <Field name="responsibility" type="text" className="form-control" />
-                                                <ErrorMessage name="responsibility" component="div" className="invalid-msg" />
-                                            </div>
-                                        </>
-                                    } */}
 
-                                    <div className="col-md-8 mt-4">
+                                    <div className={values.courseType === "Conference" ? "col-md-5 mt-4" : "col-md-6 mt-4"}>
                                         <span className="form-label me-3">
                                             Feedback / Impact forms / Participation certificate of previous course submitted
                                         </span>
@@ -837,6 +709,113 @@ const AddEditRequisition = () => {
                                             </button>
                                         </div>
                                     </div>
+
+                                    {values.courseType === "Conference" &&
+                                        <>
+                                            <div className="col-md-3 mt-4">
+                                                <span className="form-label me-3">
+                                                    Paper present in conference, if any
+                                                </span>
+
+                                                <div className="btn-group bg-light rounded-pill border" role="group">
+                                                    <button
+                                                        type="button"
+                                                        className={`btn rounded-pill px-4 py-2 transition-all ${values.isPaperPresent === "Y" ? "btn-success shadow-sm" : "btn-light text-muted"
+                                                            }`}
+                                                        onClick={() => setFieldValue("isPaperPresent", "Y")}
+                                                    >
+                                                        Yes
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        className={`btn rounded-pill px-4 py-2 transition-all ${values.isPaperPresent === "N" ? "btn-danger shadow-sm" : "btn-light text-muted"
+                                                            }`}
+                                                        onClick={() => setFieldValue("isPaperPresent", "N")}
+                                                    >
+                                                        No
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {values.isPaperPresent === "Y" &&
+                                                <>
+                                                    <div className="col-md-4 mt-4">
+                                                        <span className="form-label me-3">
+                                                            Title of Paper
+                                                        </span>
+                                                        <Select
+                                                            options={journalOptions}
+                                                            value={journalOptions.find((item) => item.value === values.journalId) || null}
+                                                            placeholder="Select Paper"
+                                                            isSearchable
+                                                            onChange={(selected) => {
+                                                                setFieldValue("journalId", selected ? selected.value : 0);
+                                                            }}
+                                                        />
+                                                        <ErrorMessage name="journalId" component="div" className="invalid-msg" />
+                                                    </div>
+
+                                                    <div className="row mt-4">
+                                                        <h6 className="text-start text-primary">Mandatory Enclosures for conference</h6>
+                                                        {[
+                                                            { label: "1. Commitee Approval Letter", name: "multipartCommitteeApproval" },
+                                                            { label: "2. Paper Acceptance Letter", name: "multipartAcceptanceLetter" },
+                                                            { label: "3. Paper", name: "multipartPaper" },
+                                                        ].map((item, index) => (
+                                                            <div className="col-md-4 mb-3" key={index}>
+                                                                <label className="form-label small fw-medium text-secondary">
+                                                                    {item.label}
+                                                                </label>
+
+                                                                <div className="border rounded p-2 bg-light">
+
+                                                                    {/* Existing File (Edit Mode) */}
+                                                                    {requisitionId && existingFiles[item.name] && !values[item.name] && (
+                                                                        <div className="d-flex justify-content-between align-items-center mb-2">
+                                                                            <button
+                                                                                type="button"
+                                                                                className="btn btn-link text-primary p-0 small text-decoration-none"
+                                                                                onClick={() => handleDownload(requisitionId, existingFiles[item.name].name)}
+                                                                            >
+                                                                                <BsFileEarmark className="me-1 mb-1" />
+                                                                                {existingFiles[item.name].name}
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Newly Selected File */}
+                                                                    {values[item.name] && (
+                                                                        <div className="small text-success mb-2">
+                                                                            <FaCheckCircle className="me-1" />
+                                                                            {values[item.name].name}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* File Input */}
+                                                                    <input
+                                                                        type="file"
+                                                                        className="form-control form-control-sm"
+                                                                        accept=".pdf,.jpg,.jpeg,.png"
+                                                                        onChange={(event) => {
+                                                                            const file = event.currentTarget.files?.[0] || null;
+                                                                            setFieldValue(item.name, file);
+                                                                        }}
+                                                                        onBlur={() => setFieldTouched(item.name, true)}
+                                                                        onClick={(e) => (e.target.value = null)}
+                                                                    />
+
+                                                                </div>
+
+                                                                <ErrorMessage name={item.name} component="div" className="invalid-msg" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            }
+
+                                        </>
+                                    }
 
                                     <div className="col-md-12">
                                         <label className="form-label">Necessity of course and benefits</label>
@@ -980,264 +959,14 @@ const AddEditRequisition = () => {
                 </div>
             </div>
 
-            {showProgramModal && (
-                <>
-                    <div className="modal-backdrop show custom-backdrop" onClick={handleCourseClose}></div>
-                    <div className="modal fade show d-block" tabIndex="-1">
-                        <div className="modal-dialog modal-lg">
-                            <div className="modal-content">
-
-                                <div className="modal-header custom-modal-header">
-                                    <h5 className="modal-title">Add New Program</h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close"
-                                        onClick={handleCourseClose}
-                                    ></button>
-                                </div>
-
-                                <div className="modal-body custom-modal-body">
-
-                                    <Formik
-                                        innerRef={courseFormikRef}
-                                        initialValues={{
-                                            courseCode: "",
-                                            courseTypeId: "",
-                                            courseLevel: "",
-                                            courseName: "",
-                                            organizerId: "",
-                                            fromDate: null,
-                                            toDate: null,
-                                            eligibilityId: null,
-                                            offlineRegistrationFee: 0,
-                                            onlineRegistrationFee: null,
-                                            venue: "",
-                                            noOfNomination: 0,
-                                        }}
-                                        validationSchema={programSchema}
-                                        onSubmit={handleProgramSubmit}
-                                    >
-                                        {({ setFieldValue, values }) => (
-                                            <Form autoComplete="off">
-
-                                                <div className="row text-start">
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Course Code (Optional)</label>
-                                                        <Field
-                                                            name="courseCode"
-                                                            className="form-control"
-                                                        />
-                                                        <ErrorMessage name="courseCode" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Course Type</label>
-                                                        <span className="text-danger">*</span>
-                                                        <Select
-                                                            className="cs-select"
-                                                            options={courseTypeOptions}
-                                                            value={courseTypeOptions.find(o => o.value === values.courseTypeId)}
-                                                            onChange={o => setFieldValue("courseTypeId", o?.value || "")}
-                                                        />
-                                                        <ErrorMessage name="courseTypeId" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Course Preference</label>
-                                                        <span className="text-danger">*</span>
-                                                        <Select
-                                                            className="cs-select"
-                                                            options={courseLevelOptions}
-                                                            value={courseLevelOptions.find(o => o.value === values.courseLevel)}
-                                                            onChange={o => setFieldValue("courseLevel", o?.value || "")}
-                                                        />
-                                                        <ErrorMessage name="courseLevel" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-8 mb-3">
-                                                        <label className="form-label">Course Name
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Field
-                                                            name="courseName"
-                                                            className="form-control"
-                                                        />
-                                                        <ErrorMessage name="courseName" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Organized By
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Select
-                                                            options={agencyOptions}
-                                                            value={agencyOptions.find((item) => item.value === Number(values.organizerId)) || null}
-                                                            onChange={(option) => setFieldValue("organizerId", option ? option.value : "")}
-                                                            placeholder="Select Organize"
-                                                            isSearchable
-                                                        />
-                                                        <ErrorMessage name="organizerId" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Eligibility
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Select
-                                                            options={eligibilityOptions}
-                                                            value={
-                                                                values.eligibilityId
-                                                                    ? eligibilityOptions.find((item) => item.value === Number(values.eligibilityId))
-                                                                    : null
-                                                            }
-                                                            onChange={(selected) => handleChangeEligibility(selected)}
-                                                            placeholder="Select Eligibility"
-                                                            isSearchable
-                                                        />
-                                                        <ErrorMessage name="eligibilityId" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">From Date
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <DatePicker
-                                                            selected={values.fromDate}
-                                                            onChange={(date) =>
-                                                                setFieldValue("fromDate", date)
-                                                            }
-                                                            className="form-control"
-                                                            dateFormat="dd-MM-yyyy"
-                                                            showYearDropdown
-                                                            showMonthDropdown
-                                                            dropdownMode="select"
-                                                            onKeyDown={(event) => event.preventDefault()}
-                                                        />
-                                                        <ErrorMessage name="fromDate" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">To Date
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <DatePicker
-                                                            selected={values.toDate}
-                                                            onChange={(date) =>
-                                                                setFieldValue("toDate", date)
-                                                            }
-                                                            className="form-control"
-                                                            dateFormat="dd-MM-yyyy"
-                                                            minDate={values.fromDate}
-                                                            showYearDropdown
-                                                            showMonthDropdown
-                                                            dropdownMode="select"
-                                                            onKeyDown={(event) => event.preventDefault()}
-                                                        />
-                                                        <ErrorMessage name="toDate" component="div" className="invalid-msg" />
-                                                    </div>
-
-
-                                                    {showAddEligibility && (
-                                                        <div className="col-md-12 mb-3">
-                                                            <div className="border rounded p-3 bg-light">
-
-                                                                <label className="form-label">
-                                                                    Add New Eligibility <span className="text-danger">*</span>
-                                                                </label>
-
-                                                                <input
-                                                                    type="text"
-                                                                    className="form-control"
-                                                                    placeholder="Enter Eligibility Name"
-                                                                    value={eligibilityInput}
-                                                                    onChange={(e) => {
-                                                                        setEligibilityInput(e.target.value);
-                                                                        if (eligibilityError) setEligibilityError("");
-                                                                    }}
-                                                                />
-
-                                                                {eligibilityError && (
-                                                                    <div className="invalid-msg">{eligibilityError}</div>
-                                                                )}
-
-                                                                <div className="mt-2 d-flex gap-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn btn-sm btn-success"
-                                                                        onClick={handleEligibleSubmit}
-                                                                    >
-                                                                        SAVE
-                                                                    </button>
-
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn btn-sm btn-secondary"
-                                                                        onClick={() => setShowAddEligibility(false)}
-                                                                    >
-                                                                        CANCEL
-                                                                    </button>
-                                                                </div>
-
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Offline RE Fee (₹)
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Field className="form-control" name="offlineRegistrationFee" type="number" />
-                                                        <ErrorMessage name="offlineRegistrationFee" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Online RE Fee (₹)</label>
-                                                        <Field className="form-control" name="onlineRegistrationFee" type="number" />
-                                                        <ErrorMessage name="onlineRegistrationFee" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">No of Nomination</label>
-                                                        <Field className="form-control" name="noOfNomination" type="number" />
-                                                        <ErrorMessage name="noOfNomination" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-8 mb-3">
-                                                        <label className="form-label">Venue
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Field
-                                                            name="venue"
-                                                            className="form-control"
-                                                        />
-                                                        <ErrorMessage name="venue" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                </div>
-
-                                                <div className="text-center mt-2 mb-4">
-                                                    <button type="submit" className="submit">
-                                                        Submit
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="back"
-                                                        onClick={handleCourseClose}
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </div>
-
-                                            </Form>
-                                        )}
-                                    </Formik>
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </>
+            {showCourseModal && (
+                <CourseModal
+                    showProgramModal={showCourseModal}
+                    setShowProgramModal={setShowCourseModal}
+                    setCourseData={setCourseData}
+                    fetchPrograms={fetchPrograms}
+                    isMandatory={false}
+                />
             )}
 
         </div>

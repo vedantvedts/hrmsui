@@ -131,7 +131,7 @@ const SAHRTApprovalList = () => {
                 requisitionIds: selectedIds,
                 actionBy: empId,
             }
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to forward!", message: '' });
             if (!confirm) {
                 return;
             }

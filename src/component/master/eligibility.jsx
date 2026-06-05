@@ -94,7 +94,7 @@ const Eligibility = () => {
 
     const handleEligibleSubmit = async (values, { resetForm }) => {
         try {
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }

@@ -7,9 +7,9 @@ import { Form, Formik } from "formik";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
 import { handleApiError } from "../../service/master.service";
 import Swal from "sweetalert2";
-import { getFeedbackById, requisitionFeedback, updateReqFeedback } from "../../service/training.service";
+import { feedbackFileDownload, getFeedbackById, requisitionFeedback, updateReqFeedback } from "../../service/training.service";
 import { BsFileEarmark } from "react-icons/bs";
-
+import Select from "react-select";
 
 
 const Feedback = () => {
@@ -40,12 +40,6 @@ const Feedback = () => {
     useEffect(() => {
         if (editData && Object.keys(editData).length > 0) {
             setInitialValues({
-                feedbackId: editData.feedbackId,
-                requisitionId: editData.requisitionId,
-                participantId: editData.participantId,
-                facultyName: editData.facultyName,
-                facultyAddress: editData.facultyAddress,
-                remark: editData.remark,
                 course: editData.course,
                 coverage: editData.coverage,
                 duration: editData.duration,
@@ -55,16 +49,29 @@ const Feedback = () => {
                 quality: editData.quality,
                 seminarVenue: editData.seminarVenue,
             });
+            setFeedbackOtherDetails({
+                feedbackId: editData.feedbackId,
+                requisitionId: editData.requisitionId,
+                participantId: editData.participantId,
+                facultyName: editData.facultyName,
+                facultyAddress: editData.facultyAddress,
+                remark: editData.remark,
+                requestThrough: editData.requestThrough,
+            });
         }
     }, [editData]);
 
-    const [initialValues, setInitialValues] = useState({
+    const [feedbackOtherDetails, setFeedbackOtherDetails] = useState({
         feedbackId: "",
         requisitionId: "",
-        feedbackDate: null,
         participantId: "",
         facultyName: "",
         facultyAddress: "",
+        remark: "",
+        requestThrough: "",
+    });
+
+    const [initialValues, setInitialValues] = useState({
         remark: "",
         course: "",
         coverage: "",
@@ -113,19 +120,22 @@ const Feedback = () => {
                 return;
             }
 
+            if (feedbackOtherDetails.requestThrough.trim() === "") {
+                Swal.fire("Warning", "Please select the emerging through option.", "warning");
+                return;
+            }
+
             const dto = {
                 ...values,
+                ...feedbackOtherDetails,
                 requisitionId: item?.requisitionId || editData?.requisitionId,
                 feedbackDate: format(new Date(), "yyyy-MM-dd"),
                 participantId: item?.initiatingOfficer || editData?.participantId,
-                facultyName: initialValues.facultyName?.trim(),
-                facultyAddress: initialValues.facultyAddress?.trim(),
-                remark: initialValues.remark?.trim(),
                 certificateFile,
                 invoiceFile,
             };
 
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }
@@ -150,6 +160,37 @@ const Feedback = () => {
         }
     };
 
+    const handleDownload = async (feedId, type) => {
+
+        let response = await feedbackFileDownload(feedId, type);
+        const { data, fileName, contentType } = response;
+        if (data === '0') {
+            Swal.fire("Error", "File not found", "error");
+            return;
+        }
+
+        const blob = new Blob([data], { type: contentType });
+        if (contentType === "application/pdf") {
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, "_blank");
+        } else {
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        }
+    };
+
+    const emergingOptions = [
+        { value: "TNI", label: "TNI" },
+        { value: "Open", label: "Open" },
+        { value: "RAC Board", label: "RAC Board" },
+        { value: "CEPTAM Board", label: "CEPTAM Board" },
+    ];
 
     return (
         <div>
@@ -257,9 +298,9 @@ const Feedback = () => {
                                             type="text"
                                             className="form-control"
                                             placeholder="Faculty Name & Designation"
-                                            value={initialValues.facultyName || ""}
+                                            value={feedbackOtherDetails.facultyName || ""}
                                             onChange={(e) =>
-                                                setInitialValues((prev) => ({
+                                                setFeedbackOtherDetails((prev) => ({
                                                     ...prev,
                                                     facultyName: e.target.value,
                                                 }))
@@ -272,9 +313,9 @@ const Feedback = () => {
                                             type="text"
                                             className="form-control"
                                             placeholder="Faculty Address"
-                                            value={initialValues.facultyAddress || ""}
+                                            value={feedbackOtherDetails.facultyAddress || ""}
                                             onChange={(e) =>
-                                                setInitialValues((prev) => ({
+                                                setFeedbackOtherDetails((prev) => ({
                                                     ...prev,
                                                     facultyAddress: e.target.value,
                                                 }))
@@ -292,9 +333,9 @@ const Feedback = () => {
                                     className="form-control"
                                     placeholder="Suggestion / Remarks"
                                     rows={2}
-                                    value={initialValues.remark || ""}
+                                    value={feedbackOtherDetails.remark || ""}
                                     onChange={(e) =>
-                                        setInitialValues((prev) => ({
+                                        setFeedbackOtherDetails((prev) => ({
                                             ...prev,
                                             remark: e.target.value,
                                         }))
@@ -303,7 +344,9 @@ const Feedback = () => {
                             </div>
 
                             <div className="col-md-4">
-                                <label className="form-label fw-semibold">Certificate</label>
+                                <label className="form-label fw-semibold">Certificate
+                                    <span className="text-danger">*</span>
+                                </label>
                                 <div className="border rounded p-2 bg-light">
 
                                     {editData && editData.certificate && (
@@ -311,7 +354,7 @@ const Feedback = () => {
                                             <button
                                                 type="button"
                                                 className="btn btn-link text-primary p-0 small text-decoration-none"
-
+                                                onClick={() => handleDownload(editData.feedbackId, 'certificate')}
                                             >
                                                 <BsFileEarmark className="me-1 mb-1" />
                                                 {editData.certificate}
@@ -340,7 +383,7 @@ const Feedback = () => {
                                             <button
                                                 type="button"
                                                 className="btn btn-link text-primary p-0 small text-decoration-none"
-
+                                                onClick={() => handleDownload(editData.feedbackId, 'invoice')}
                                             >
                                                 <BsFileEarmark className="me-1 mb-1" />
                                                 {editData.invoice}
@@ -360,6 +403,25 @@ const Feedback = () => {
                                 </div>
                                 <span className="text-muted small">Note : Original shall be submitted to O/o HRT for payment processing.</span>
                             </div>
+
+                            <div className="col-md-4">
+                                <label className="form-label fw-semibold">Request Emerging Through
+                                    <span className="text-danger">*</span>
+                                </label>
+                                <Select
+                                    options={emergingOptions}
+                                    value={emergingOptions.find(option => option.value === feedbackOtherDetails.requestThrough) || null}
+                                    onChange={(selectedOption) =>
+                                        setFeedbackOtherDetails((prev) => ({
+                                            ...prev,
+                                            requestThrough: selectedOption ? selectedOption.value : "",
+                                        }))
+                                    }
+                                    placeholder="Select an option"
+                                    isClearable
+                                />
+                            </div>
+
 
                         </div>
                     </div>
@@ -422,7 +484,7 @@ const Feedback = () => {
                                                                         type="checkbox"
                                                                         className="form-check-input"
                                                                         checked={values[row.id] === grade}
-
+                                                                        onChange={() => { }}
                                                                         style={{
                                                                             transform: "scale(1.2)",
                                                                             cursor: "pointer",
@@ -484,6 +546,7 @@ const Feedback = () => {
                                                                         type="checkbox"
                                                                         className="form-check-input"
                                                                         checked={values[row.id] === grade}
+                                                                        onChange={() => { }}
                                                                         style={{
                                                                             transform: "scale(1.2)",
                                                                             cursor: "pointer",

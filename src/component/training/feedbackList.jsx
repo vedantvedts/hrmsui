@@ -221,7 +221,7 @@ const FeedbackList = () => {
                 acceptedBy: empId
             }
 
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }

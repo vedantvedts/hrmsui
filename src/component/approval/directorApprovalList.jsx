@@ -139,7 +139,7 @@ const DirectorApprovalList = () => {
                 requisitionIds: selectedIds,
                 actionBy: empId,
             }
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to approve!", message: '' });
             if (!confirm) {
                 return;
             }
@@ -196,7 +196,7 @@ const DirectorApprovalList = () => {
                 requisitionIds: selectedIds,
                 actionBy: empId,
             }
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to reccommend!", message: '' });
             if (!confirm) {
                 return;
             }

@@ -158,7 +158,7 @@ const RequisitionApproval = () => {
                 ...item,
                 actionBy: employeeId,
             }
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to forward!", message: '' });
             if (!confirm) {
                 return;
             }
@@ -187,7 +187,7 @@ const RequisitionApproval = () => {
                 remarks: values.remarks,
                 actionBy: employeeId,
             }
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }

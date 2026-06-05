@@ -151,13 +151,29 @@ export const updateNotification = async (notificationId) => {
   }
 }
 
-export const getAuditStampingList = async (selUser, fromDate,toDate) => {
+export const getAuditStampingList = async (selUser, fromDate, toDate) => {
   try {
-    const response = await axios.get(`${API_URL}api/admin/audit-stamping-list`, { params: {selUser,fromDate,toDate }, headers: authHeader() });
-   
+    const response = await axios.get(`${API_URL}api/admin/audit-stamping-list`, { params: { selUser, fromDate, toDate }, headers: authHeader() });
+
     return response.data;
   } catch (error) {
     console.error('Error occurred in getAuditStampingList:', error);
     throw error;
   }
 };
+
+export const updatePassWord = async (data) => {
+  try {
+    const res = await axios.put(`${API_URL}api/admin/update-password`, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader(),
+      },
+    }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('updatePassWord error:', error);
+    throw error;
+  }
+}

@@ -3,7 +3,7 @@ import Datatable from "../../datatable/Datatable";
 import Navbar from "../navbar/Navbar";
 import { addEligible, addProgram, editProgram, getAgencies, getCourseList, getCourseTypeList, getEligibilities } from "../../service/training.service";
 import Swal from "sweetalert2";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import DatePicker from "react-datepicker";
@@ -15,6 +15,7 @@ import { FaEdit } from "react-icons/fa";
 import { useRef } from "react";
 import { usePermission } from "../../common/usePermission";
 import { useLocation, useNavigate } from "react-router-dom";
+import CourseModal from "./courseModal";
 
 
 const ProgramList = () => {
@@ -26,57 +27,37 @@ const ProgramList = () => {
     const stateOrgId = location?.state;
 
     const [filterOrganizeList, setFilterOrganizeList] = useState([]);
-    const [eligibilityList, setEligibilityList] = useState([]);
     const [showProgramModal, setShowProgramModal] = useState(false);
     const [agencyList, setAgencyList] = useState([]);
-    const [editMode, setEditMode] = useState(false);
+    const [editData, setEditData] = useState();
     const formikRef = useRef(null);
     const [selectedOrgId, setSelectedOrgId] = useState(stateOrgId ?? 0);
-    const [showAddEligibility, setShowAddEligibility] = useState(false);
-    const [eligibilityInput, setEligibilityInput] = useState("");
-    const [eligibilityError, setEligibilityError] = useState("");
-    const [courseTypeList, setCourseTypeList] = useState([]);
 
-    const programFeilds = {
-        courseCode: "",
-        courseTypeId: "",
-        courseLevel: "",
-        courseId: "",
-        courseName: "",
-        organizerId: "",
-        eligibilityId: null,
-        fromDate: null,
-        toDate: null,
-        offlineRegistrationFee: 0,
-        onlineRegistrationFee: null,
-        noOfNomination: 0,
-        venue: "",
-    };
-
-    const [initialValues, setInitialValues] = useState(programFeilds);
 
     useEffect(() => {
         fetchAgencies();
-        fetchEligibility();
-        fetchCourseType();
     }, []);
 
-    useEffect(() => {
+    const fetchAgencies = async () => {
+        try {
+            const response = await getAgencies();
+            setAgencyList(response?.data || []);
+        } catch (error) {
+            console.error("Error fetching agencies:", error);
+            Swal.fire("Error", "Failed to fetch agency data. Please try again later.", "error");
+        }
+    };
 
+    useEffect(() => {
         if (stateOrgId) {
             setSelectedOrgId(stateOrgId);
             navigate(location.pathname, { replace: true, state: null });
         }
-
     }, []);
 
     useEffect(() => {
         if (selectedOrgId !== null && selectedOrgId !== undefined) {
             fetchCourseData(selectedOrgId);
-            setInitialValues((prev) => ({
-                ...prev,
-                organizerId: selectedOrgId || ""
-            }));
         }
     }, [selectedOrgId]);
 
@@ -90,38 +71,9 @@ const ProgramList = () => {
         }
     };
 
-    const fetchAgencies = async () => {
-        try {
-            const response = await getAgencies();
-            setAgencyList(response?.data || []);
-        } catch (error) {
-            console.error("Error fetching agencies:", error);
-            Swal.fire("Error", "Failed to fetch agency data. Please try again later.", "error");
-        }
-    };
-
-    const fetchEligibility = async () => {
-        try {
-            const response = await getEligibilities();
-            setEligibilityList(response?.data || []);
-        } catch (error) {
-            console.error("Error fetching eligibility:", error);
-            Swal.fire("Error", "Failed to fetch eligibility data. Please try again later.", "error");
-        }
-    };
-
-    const fetchCourseType = async () => {
-        try {
-            const response = await getCourseTypeList();
-            setCourseTypeList(response?.data || []);
-        } catch (error) {
-            console.error("Error fetching course type:", error);
-            Swal.fire("Error", "Failed to fetch course type data. Please try again later.", "error");
-        }
-    };
-
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
+        { name: "Course Type", selector: (row) => row.courseType, sortable: true, align: 'text-center' },
         { name: "Course Code", selector: (row) => row.courseCode, sortable: true, align: 'text-center' },
         { name: "Course Name", selector: (row) => row.courseName, sortable: true, align: 'text-left' },
         { name: "Organizer", selector: (row) => row.organizer, sortable: true, align: 'text-left' },
@@ -137,6 +89,7 @@ const ProgramList = () => {
     const mappedData = () => {
         return filterOrganizeList.map((item, index) => ({
             sn: index + 1,
+            courseType: item.courseType || "-",
             courseCode: item.courseCode || "NA",
             courseName: item.courseName || "-",
             organizer: item.organizer || "-",
@@ -164,62 +117,19 @@ const ProgramList = () => {
     };
 
     const handleEdit = (item) => {
-        setEditMode(true);
-        setInitialValues({
-            courseId: item?.courseId || "",
-            courseCode: item?.courseCode || "",
-            courseTypeId: item?.courseTypeId || "",
-            courseLevel: item?.courseLevel || "",
-            courseName: item?.courseName || "",
-            organizerId: item?.organizerId || "",
-            eligibilityId: item?.eligibilityId || "",
-            fromDate: item?.fromDate || null,
-            toDate: item?.toDate || null,
-            offlineRegistrationFee: item?.offlineRegistrationFee || 0,
-            onlineRegistrationFee: item?.onlineRegistrationFee || null,
-            noOfNomination: item?.noOfNomination || 0,
-            venue: item?.venue || "",
-        });
+        setEditData(item);
         setShowProgramModal(true);
-
     }
 
-    const programSchema = Yup.object().shape({
-        courseName: Yup.string().trim().required("Course Name is required"),
-        courseCode: Yup.string().trim().notRequired(),
-        courseTypeId: Yup.string().required("Course Type is required"),
-        courseLevel: Yup.string().required("Course Preference is required"),
-        organizerId: Yup.string().required("Organized By is required"),
-        eligibilityId: Yup.string().required("Eligibility is required"),
-        fromDate: Yup.date().required("From Date is required"),
-        toDate: Yup.date()
-            .required("To Date is required")
-            .min(Yup.ref("fromDate"), "To Date must be after From Date"),
-        offlineRegistrationFee: Yup.number()
-            .typeError("Amount must be a number")
-            .transform((value, originalValue) =>
-                originalValue === "" ? undefined : value
-            )
-            .required("Offline Fee is required")
-            .min(0, "Amount cannot be negative"),
-        onlineRegistrationFee: Yup.number()
-            .typeError("Amount must be a number")
-            .min(0, "Amount cannot be negative")
-            .nullable()
-            .transform((value, originalValue) => originalValue === "" ? null : value),
-        noOfNomination: Yup.string()
-            .required("No of Nomination is required")
-            .min(0, "Nomination cannot be negative"),
-        venue: Yup.string().trim().required("Venue is required"),
-    });
+    const handleAdd = () => {
+        setEditData(null);
+        setShowProgramModal(true);
+    }
 
-    const eligibilityOptions = [
-        { value: 0, label: "Add New" },
-        ...eligibilityList.map((item) => ({
-            value: item.eligibilityId,
-            label: item.eligibilityName
-        }))
-    ];
+    const handleChangeOrganizer = (orgId) => {
+        setSelectedOrgId(orgId);
+    };
+
 
     const organizerOptions = [
         { value: 0, label: "All" },
@@ -228,113 +138,6 @@ const ProgramList = () => {
             label: data?.organizer
         }))
     ];
-
-    const courseTypeOptions = courseTypeList.map(data => ({
-        value: data?.courseTypeId,
-        label: data?.courseType
-    }));
-
-    const courseLevelOptions = [
-        { value: "National", label: "National" },
-        { value: "International", label: "International" },
-    ];
-
-    const agencyOptions = organizerOptions.slice(1);
-
-    const handleChangeOrganizer = (orgId) => {
-        setSelectedOrgId(orgId);
-    };
-
-
-    const handleProgramSubmit = async (values, { resetForm, setSubmitting }) => {
-        try {
-            const dto = {
-                ...values,
-                fromDate: format(new Date(values.fromDate), "yyyy-MM-dd"),
-                toDate: format(new Date(values.toDate), "yyyy-MM-dd"),
-            }
-
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
-            if (!confirm) {
-                return;
-            }
-            const response = editMode ? await editProgram(dto) : await addProgram(dto);
-            if (response && response.success) {
-                Swal.fire({
-                    title: "Success",
-                    text: response.message,
-                    icon: "success",
-                    showConfirmButton: false,
-                    timer: 2000,
-                });
-                handleClose();
-                resetForm();
-                fetchCourseData(selectedOrgId);
-            } else {
-                Swal.fire("Warning", response.message, "warning");
-            }
-        } catch (error) {
-            Swal.fire("Warning", handleApiError(error), "warning");
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleClose = () => {
-        setShowProgramModal(false);
-        setInitialValues(programFeilds);
-        setEditMode(false);
-        setShowAddEligibility(false);
-        setEligibilityInput("");
-        setEligibilityError("");
-    }
-
-    const handleChangeEligibility = (selected) => {
-        const { setFieldValue } = formikRef.current;
-
-        if (!selected) return;
-
-        if (selected.value === 0) {
-            setShowAddEligibility(true);
-            setEligibilityInput("");
-            setEligibilityError("");
-            setFieldValue("eligibilityId", null);
-            return;
-        }
-
-        setShowAddEligibility(false);
-        setFieldValue("eligibilityId", selected.value);
-    };
-
-    const validateEligibility = () => {
-        if (!eligibilityInput.trim()) {
-            setEligibilityError("Eligibility Name is required");
-            return false;
-        }
-        setEligibilityError("");
-        return true;
-    };
-
-    const handleEligibleSubmit = async () => {
-        if (!validateEligibility()) return;
-        try {
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
-            if (!confirm) return;
-
-            const response = await addEligible({ eligibilityName: eligibilityInput });
-            if (response && response.success) {
-                const newItem = response.data;
-                fetchEligibility();
-                formikRef.current.setFieldValue("eligibilityId", newItem.eligibilityId);
-                setShowAddEligibility(false);
-                setEligibilityInput("");
-            } else {
-                Swal.fire("Warning", response.message, "warning");
-            }
-        } catch (error) {
-            Swal.fire("Warning", handleApiError(error), "warning");
-        }
-    };
 
 
     return (
@@ -376,261 +179,21 @@ const ProgramList = () => {
                 {canAdd &&
                     <button
                         className="add"
-                        onClick={() => setShowProgramModal(true)}>
+                        onClick={handleAdd}>
                         ADD NEW
                     </button>
                 }
             </div>
 
             {showProgramModal && (
-                <>
-                    <div className="modal-backdrop show custom-backdrop" onClick={handleClose}></div>
-                    <div className="modal fade show d-block" tabIndex="-1">
-                        <div className="modal-dialog modal-lg">
-                            <div className="modal-content">
-
-                                <div className="modal-header custom-modal-header">
-                                    <h5 className="modal-title">{editMode ? 'Edit Course' : 'Add New Course'}</h5>
-                                    <button
-                                        type="button"
-                                        className="btn-close"
-                                        onClick={handleClose}
-                                    ></button>
-                                </div>
-
-                                <div className="modal-body custom-modal-body">
-
-                                    <Formik
-                                        innerRef={formikRef}
-                                        initialValues={initialValues}
-                                        validationSchema={programSchema}
-                                        onSubmit={handleProgramSubmit}
-                                        enableReinitialize
-                                    >
-                                        {({ setFieldValue, values }) => (
-                                            <Form autoComplete="off">
-
-                                                <div className="row text-start">
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Course Code (Optional)</label>
-                                                        <Field
-                                                            name="courseCode"
-                                                            className="form-control"
-                                                        />
-                                                        <ErrorMessage name="courseCode" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Course Type</label>
-                                                        <span className="text-danger">*</span>
-                                                        <Select
-                                                            className="cs-select"
-                                                            options={courseTypeOptions}
-                                                            value={courseTypeOptions.find(o => o.value === values.courseTypeId)}
-                                                            onChange={o => setFieldValue("courseTypeId", o?.value || "")}
-                                                        />
-                                                        <ErrorMessage name="courseTypeId" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Course Preference</label>
-                                                        <span className="text-danger">*</span>
-                                                        <Select
-                                                            className="cs-select"
-                                                            options={courseLevelOptions}
-                                                            value={courseLevelOptions.find(o => o.value === values.courseLevel)}
-                                                            onChange={o => setFieldValue("courseLevel", o?.value || "")}
-                                                        />
-                                                        <ErrorMessage name="courseLevel" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-8 mb-3">
-                                                        <label className="form-label">Course Name
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Field
-                                                            name="courseName"
-                                                            className="form-control"
-                                                        />
-                                                        <ErrorMessage name="courseName" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Organized By
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Select
-                                                            options={agencyOptions}
-                                                            value={agencyOptions.find((item) => item.value === Number(values.organizerId)) || null}
-                                                            onChange={(option) => setFieldValue("organizerId", option ? option.value : "")}
-                                                            placeholder="Select Organizer"
-                                                            isSearchable
-                                                        />
-                                                        <ErrorMessage name="organizerId" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Eligibility
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Select
-                                                            options={eligibilityOptions}
-                                                            value={
-                                                                values.eligibilityId
-                                                                    ? eligibilityOptions.find((item) => item.value === Number(values.eligibilityId))
-                                                                    : null
-                                                            }
-                                                            onChange={(selected) => handleChangeEligibility(selected)}
-                                                            placeholder="Select Eligibility"
-                                                            isSearchable
-                                                        />
-                                                        <ErrorMessage name="eligibilityId" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">From Date
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <DatePicker
-                                                            selected={values.fromDate}
-                                                            onChange={(date) =>
-                                                                setFieldValue("fromDate", date)
-                                                            }
-                                                            className="form-control"
-                                                            dateFormat="dd-MM-yyyy"
-                                                            showYearDropdown
-                                                            showMonthDropdown
-                                                            dropdownMode="select"
-                                                            onKeyDown={(event) => event.preventDefault()}
-                                                        />
-                                                        <ErrorMessage name="fromDate" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">To Date
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <DatePicker
-                                                            selected={values.toDate}
-                                                            onChange={(date) =>
-                                                                setFieldValue("toDate", date)
-                                                            }
-                                                            className="form-control"
-                                                            dateFormat="dd-MM-yyyy"
-                                                            minDate={values.fromDate}
-                                                            showYearDropdown
-                                                            showMonthDropdown
-                                                            dropdownMode="select"
-                                                            onKeyDown={(event) => event.preventDefault()}
-                                                        />
-                                                        <ErrorMessage name="toDate" component="div" className="invalid-msg" />
-                                                    </div>
-
-
-                                                    {showAddEligibility && (
-                                                        <div className="col-md-12 mb-3">
-                                                            <div className="border rounded p-3 bg-light">
-
-                                                                <label className="form-label">
-                                                                    Add New Eligibility <span className="text-danger">*</span>
-                                                                </label>
-
-                                                                <input
-                                                                    type="text"
-                                                                    className="form-control"
-                                                                    placeholder="Enter Eligibility Name"
-                                                                    value={eligibilityInput}
-                                                                    onChange={(e) => {
-                                                                        setEligibilityInput(e.target.value);
-                                                                        if (eligibilityError) setEligibilityError("");
-                                                                    }}
-                                                                />
-
-                                                                {eligibilityError && (
-                                                                    <div className="invalid-msg">{eligibilityError}</div>
-                                                                )}
-
-                                                                <div className="mt-2 d-flex gap-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn btn-sm btn-success"
-                                                                        onClick={handleEligibleSubmit}
-                                                                    >
-                                                                        SAVE
-                                                                    </button>
-
-                                                                    <button
-                                                                        type="button"
-                                                                        className="btn btn-sm btn-secondary"
-                                                                        onClick={() => setShowAddEligibility(false)}
-                                                                    >
-                                                                        CANCEL
-                                                                    </button>
-                                                                </div>
-
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Offline RE Fee (₹)
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Field className="form-control" name="offlineRegistrationFee" type="number" />
-                                                        <ErrorMessage name="offlineRegistrationFee" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">Online RE Fee (₹)</label>
-                                                        <Field className="form-control" name="onlineRegistrationFee" type="number" />
-                                                        <ErrorMessage name="onlineRegistrationFee" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-4 mb-3">
-                                                        <label className="form-label">No of Nomination</label>
-                                                        <Field className="form-control" name="noOfNomination" type="number" />
-                                                        <ErrorMessage name="noOfNomination" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                    <div className="col-md-8 mb-3">
-                                                        <label className="form-label">Venue
-                                                            <span className="text-danger">*</span>
-                                                        </label>
-                                                        <Field
-                                                            name="venue"
-                                                            className="form-control"
-                                                        />
-                                                        <ErrorMessage name="venue" component="div" className="invalid-msg" />
-                                                    </div>
-
-                                                </div>
-
-                                                <div className="text-center mt-2 mb-4">
-                                                    <button type="submit"
-                                                        className={editMode ? `update` : `submit`}
-                                                    >
-                                                        {editMode ? `update` : `submit`}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="back"
-                                                        onClick={handleClose}
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </div>
-
-                                            </Form>
-                                        )}
-                                    </Formik>
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </>
+                <CourseModal
+                    showProgramModal={showProgramModal}
+                    setShowProgramModal={setShowProgramModal}
+                    editData={editData}
+                    setEditData={setEditData}
+                    selectedOrgId={selectedOrgId}
+                    fetchCourseData={fetchCourseData}
+                />
             )}
 
         </div>

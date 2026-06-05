@@ -6,20 +6,24 @@ import Datatable from "../../datatable/Datatable";
 import { format } from "date-fns";
 import { FaEdit } from 'react-icons/fa';
 import { Tooltip } from "react-tooltip";
+import { usePermission } from '../../common/usePermission';
 
 const DistributionComponent = () => {
+
+    const { canView, canAdd, canEdit, canDelete } = usePermission("HR Distribution");
+
     const navigate = useNavigate();
     const [distribution, Setdistribution] = useState([]);
 
 
     const columns = [
-        { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center'  },
+        { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
         { name: "Employee Name", selector: (row) => row.employeeName, sortable: true, align: 'text-start' },
-        { name: "AO Officer", selector: (row) => row.aoOfficerName, sortable: true, align: 'text-start' },
+        { name: "IO/AO Officer", selector: (row) => row.aoOfficerName, sortable: true, align: 'text-start' },
         { name: "RO Officer", selector: (row) => row.roOfficerName, sortable: true, align: 'text-start' },
         { name: "Tech Activity", selector: (row) => row.techActivity },
         { name: "Non-Tech Activity", selector: (row) => row.nonTechActivity },
-        { name: "Action", selector: (row) => row.action, align: 'text-center' },
+        ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
     ];
 
     const mappedData = () => {
@@ -46,7 +50,8 @@ const DistributionComponent = () => {
                         data-tooltip-content="Edit"
                         data-tooltip-place="top"
                         onClick={() => navigate("/hr-distribution-add", {
-                            state: { item, existingEmpIds: distribution
+                            state: {
+                                item, existingEmpIds: distribution
                                     .filter(d => d.distributionId !== item.distributionId)
                                     .map(d => d.empId)
                             }
@@ -92,15 +97,16 @@ const DistributionComponent = () => {
                     <Datatable columns={columns} data={mappedData()} />
                 </div>
 
-
-                <div>
-                    <button className="add"
-                        onClick={() => navigate("/hr-distribution-add", {
-                            state: { existingEmpIds: distribution.map(d => d.empId) }
-                        })}
-                    > ADD NEW
-                    </button>
-                </div>
+                {canAdd &&
+                    <div>
+                        <button className="add"
+                            onClick={() => navigate("/hr-distribution-add", {
+                                state: { existingEmpIds: distribution.map(d => d.empId) }
+                            })}
+                        > ADD NEW
+                        </button>
+                    </div>
+                }
 
             </div>
 

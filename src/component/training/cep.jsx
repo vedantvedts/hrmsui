@@ -7,9 +7,12 @@ import { format } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { usePermission } from '../../common/usePermission';
 
 
 const CepComponent = () => {
+
+    const { canView, canAdd, canEdit, canDelete } = usePermission("In-House CEP");
 
     const navigate = useNavigate();
     const [cep, Setcep] = useState([]);
@@ -29,7 +32,7 @@ const CepComponent = () => {
 
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-        { name: "Division Name ", selector: (row) => row.divisionCode, sortable: true, align: 'text-center' },
+        { name: "Division", selector: (row) => row.divisionCode, sortable: true, align: 'text-center' },
         { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: 'text-center' },
         { name: "To Date", selector: (row) => row.toDate, sortable: true, align: 'text-center' },
         { name: "Duration", selector: (row) => row.duration, sortable: true, align: 'text-center' },
@@ -52,8 +55,11 @@ const CepComponent = () => {
             sortable: true,
             align: "text-end",
         },
+        { name: "Course Co-ordinator", selector: (row) => row.courseCoordinatorName, sortable: true, align: 'text-start' },
+        { name: "Deputy Course Co-ordinator", selector: (row) => row.deputyCourseCoordinatorName, sortable: true, align: 'text-start' },
         { name: " Comment ", selector: (row) => row.comments, sortable: true, align: 'text-start' },
-        { name: "Action", selector: (row) => row.action, align: 'text-center' },
+        ...(canEdit ? [{ name: "Action", selector: (row) => row.action, sortable: false, align: "text-center", }] : [])
+
     ];
 
     const mappedData = () => {
@@ -66,6 +72,8 @@ const CepComponent = () => {
             duration: cepItem.duration || "NA",         // was missing entirely
             fromDate: cepItem.fromDate ? format(new Date(cepItem.fromDate), "dd-MM-yyyy") : "NA",
             toDate: cepItem.toDate ? format(new Date(cepItem.toDate), "dd-MM-yyyy") : "NA",
+            courseCoordinatorName: cepItem.courseCoordinatorName || "-",
+            deputyCourseCoordinatorName: cepItem.deputyCourseCoordinatorName || "-",
             comments: cepItem.comments || "NA",
             action: (
                 <>
@@ -91,7 +99,7 @@ const CepComponent = () => {
             <div>
 
                 <h3 className="fancy-heading mt-3">
-                    CEP List
+                    In-House CEP List
                     <span className="underline-glow">
                         <span className="pulse-dot"></span>
                         <span className="pulse-dot"></span>
@@ -101,9 +109,12 @@ const CepComponent = () => {
                 <div id="card-body" className="p-2 mt-2">
                     <Datatable columns={columns} data={mappedData()} />
                 </div>
-                <div>
-                    <button className="add" onClick={() => navigate("/cep-add")}> ADD NEW</button>
-                </div>
+
+                {canAdd &&
+                    <div>
+                        <button className="add" onClick={() => navigate("/cep-add")}> ADD NEW</button>
+                    </div>
+                }
 
             </div>
 

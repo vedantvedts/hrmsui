@@ -92,10 +92,10 @@ const AuditStampingList = () => {
   const mappedData = useMemo(() => {
     return auditStampList.map((item, index) => ({
       sn: index + 1,
-      loginDate: item.loginDate ? format(new Date(item.loginDate), "dd-MM-yyyy HH:mm:ss") : "-",
+      loginDate: item.loginDatetime ? format(new Date(item.loginDatetime), "dd-MM-yyyy HH:mm:ss a") : "-",
       ipAddress: item.ipAddress || "-",
       logoutType: item.logoutType ? "Log out" : "Session Expired",
-      logoutDateTime: item.logoutDateTime ? format(new Date(item.logoutDateTime), "dd-MM-yyyy HH:mm:ss") : "-",
+      logoutDateTime: item.logoutDateTime ? format(new Date(item.logoutDateTime), "dd-MM-yyyy HH:mm:ss a") : "-",
     }));
   }, [auditStampList]);
 

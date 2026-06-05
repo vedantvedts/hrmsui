@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Datatable from "../../datatable/Datatable";
 import Navbar from "../navbar/Navbar";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { forwardRequisition, getFeedbackList, getRequisitionPrint, getRequisitions, revokeRequisition } from "../../service/training.service";
 import Swal from "sweetalert2";
 import { format } from "date-fns";
@@ -20,6 +20,7 @@ const Requisition = () => {
 
     const { canView, canAdd, canEdit, canDelete } = usePermission("Requisition");
 
+    const location = useLocation();
     const [requisitionList, setRequisitionList] = useState([]);
     const [feedbackList, setFeedbackList] = useState([]);
     const navigate = useNavigate();
@@ -27,6 +28,7 @@ const Requisition = () => {
     const roleName = localStorage.getItem("roleName");
     const [showModal, setShowModal] = useState(false);
     const [reqData, setShowReqData] = useState(null);
+    const [selectedTab, setSelectedTab] = useState(location.state?.selectedTab || "free");
 
 
     useEffect(() => {
@@ -90,8 +92,13 @@ const Requisition = () => {
         { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' },
     ];
 
+    const freeList = requisitionList.filter(item => item.registrationFee === 0);
+    const paidList = requisitionList.filter(item => item.registrationFee > 0);
+    const filteredList = selectedTab === "free" ? freeList : paidList;
+
+
     const mappedData = () => {
-        return requisitionList.map((item, index) => {
+        return filteredList.map((item, index) => {
 
             const feedbackExists = feedbackList?.some(
                 feedback => Number(feedback?.requisitionId) === Number(item?.requisitionId)
@@ -217,61 +224,69 @@ const Requisition = () => {
     }
 
     const handleAdd = () => {
-        const notApproved = [];
         const feedbackMissing = [];
 
-        requisitionList.forEach(item => {
-            if (Number(item.initiatingOfficer) !== Number(empId)) return;
+        requisitionList
+            .filter(item => ["CO", "FA"].includes(item.status))
+            .forEach(item => {
+                if (Number(item.initiatingOfficer) !== Number(empId)) return;
 
-            const feedbackExists = feedbackList?.some(
-                feedback => Number(feedback?.requisitionId) === Number(item?.requisitionId)
-            );
+                const feedbackExists = feedbackList?.some(
+                    feedback =>
+                        Number(feedback?.requisitionId) ===
+                        Number(item?.requisitionId)
+                );
 
-            // Case 1: Status validation
-            if (!(item.status === "CO" || item.status === "FA")) {
-                notApproved.push(item.requisitionNumber);
-            }
-            // Case 2: Feedback validation
-            else if (!feedbackExists) {
-                feedbackMissing.push(item.requisitionNumber);
-            }
-        });
+                if (!feedbackExists) {
+                    feedbackMissing.push(item.courseName);
+                }
+            });
 
-        if (notApproved.length > 0 || feedbackMissing.length > 0) {
+        if (feedbackMissing.length > 0) {
             Swal.fire({
-                title: "Action Required",
-                icon: "info", // "info" or "warning" looks more professional
+                title: "Feedback Submission Required",
+                icon: "info",
                 html: `
                 <div style="text-align: left; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6;">
-                    <p style="color: #555;">To proceed with adding a new entry, please ensure all your previous requisitions are finalized:</p>
                     
-                    ${notApproved.length > 0 ? `
-                        <div style="margin-top: 15px; border-left: 4px solid #f39c12; padding-left: 10px;">
-                            <strong style="color: #e67e22;">Pending Approval</strong>
-                            <p style="font-size: 0.85rem; margin: 0; color: #666;">These require approval of director:</p>
-                            <div style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px;">
-                                ${notApproved.map(req => `<span style="background: #fef5e7; border: 1px solid #f39c12; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${req}</span>`).join("")}
-                            </div>
-                        </div>
-                    ` : ""}
+                    <p style="color: #555; margin-bottom: 12px;">
+                        You cannot proceed with a new requisition until feedback is submitted for all previously approved courses.
+                    </p>
 
-                    ${feedbackMissing.length > 0 ? `
-                        <div style="margin-top: 15px; border-left: 4px solid #3498db; padding-left: 10px;">
-                            <strong style="color: #2980b9;">Feedback Required</strong>
-                            <p style="font-size: 0.85rem; margin: 0; color: #666;">Please submit feedback for these approved requisitions:</p>
-                            <div style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px;">
-                                ${feedbackMissing.map(req => `<span style="background: #ebf5fb; border: 1px solid #3498db; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${req}</span>`).join("")}
-                            </div>
+                    <div style="margin-top: 15px; border-left: 4px solid #3498db; padding-left: 12px;">
+                        <strong style="color: #2980b9; font-size: 15px;">
+                            Pending Feedback Courses
+                        </strong>
+
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            ${feedbackMissing
+                        .map(
+                            req => `
+                                    <span 
+                                        style="
+                                            background: #ebf5fb;
+                                            border: 1px solid #3498db;
+                                            color: #21618c;
+                                            padding: 4px 10px;
+                                            border-radius: 4px;
+                                            font-size: 12px;
+                                        "
+                                    >
+                                        ${req}
+                                    </span>
+                                `
+                        )
+                        .join("")}
                         </div>
-                    ` : ""}
+                    </div>
                 </div>
             `,
                 showCloseButton: true,
                 confirmButtonText: "OK",
                 confirmButtonColor: "#3085d6",
                 customClass: {
-                    container: 'my-swal-container'
-                }
+                    container: "my-swal-container",
+                },
             });
 
             return;
@@ -352,6 +367,11 @@ const Requisition = () => {
         }
     };
 
+    const handleChangeTab = (tab) => {
+        setSelectedTab(tab);
+    };
+
+
     return (
         <div>
             <Navbar />
@@ -364,6 +384,42 @@ const Requisition = () => {
                     <span className="pulse-dot"></span>
                 </span>
             </h3>
+
+            <div className="mt-5 d-flex justify-content-center">
+                <div className="p-2 bg-light rounded-pill border d-inline-flex gap-2 shadow-sm">
+
+                    {/* Free Requisition */}
+                    <button
+                        type="button"
+                        onClick={() => handleChangeTab("free")}
+                        className={`btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 transition-all ${selectedTab === "free"
+                            ? "btn-warning border-0 shadow"
+                            : "btn-light border-0 text-secondary"
+                            }`}
+                    >
+                        <span className="fw-bold">Free Requisition</span>
+                        <span className={`badge rounded-pill ${selectedTab === "free" ? "bg-dark" : "bg-secondary text-white"}`}>
+                            {freeList.length}
+                        </span>
+                    </button>
+
+                    {/* Paid Requisition */}
+                    <button
+                        type="button"
+                        onClick={() => handleChangeTab("paid")}
+                        className={`btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 transition-all ${selectedTab === "paid"
+                            ? "btn-success border-0 shadow text-white"
+                            : "btn-light border-0 text-secondary"
+                            }`}
+                    >
+                        <span className="fw-bold">Paid Requisition</span>
+                        <span className={`badge rounded-pill ${selectedTab === "paid" ? "bg-white text-success" : "bg-secondary text-white"}`}>
+                            {paidList.length}
+                        </span>
+                    </button>
+
+                </div>
+            </div>
 
             <div id="card-body" className="p-2 mt-2">
                 {<Datatable columns={columns} data={mappedData()} />}

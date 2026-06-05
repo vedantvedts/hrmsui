@@ -199,7 +199,7 @@ const HigherDegreeAddEdit = () => {
                 preference: values.preference,
 
             };
-            const confirm = await AlertConfirmation({ title: "Are you sure!", message: '' });
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
                 return;
             }
@@ -238,7 +238,7 @@ const HigherDegreeAddEdit = () => {
             <Navbar />
 
             <h3 className="fancy-heading mt-3">
-                {isEdit ? "Edit" : "Add"} Higher Degree , {degreeType}
+                {isEdit ? "Edit" : "Add"} {degreeType === "MTECH" ? "M.Tech" : "Ph.D"} Sponsorship
                 <span className="underline-glow">
                     <span className="pulse-dot"></span>
                     <span className="pulse-dot"></span>
@@ -294,7 +294,7 @@ const HigherDegreeAddEdit = () => {
                                     </div>
 
                                     <div className="col-md-2">
-                                        <label className="form-label">Emp No.</label>
+                                        <label className="form-label">PIS No.</label>
                                         <Field name="empNo" type="text" className="form-control" disabled />
                                     </div>
 
