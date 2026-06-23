@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import Navbar from "../navbar/Navbar";
 import Datatable from "../../datatable/Datatable";
-import { forwardRequisition, getRequisitionApprovals, recommendRequisition, returnRequisition } from "../../service/training.service";
+import { getRequisitionApprovals, recommendRequisition, returnRequisition, getApprovedListByEmpId } from "../../service/training.service";
 import Swal from "sweetalert2";
-import { format } from "date-fns";
+import { format, startOfYear } from "date-fns";
 import { FaCheckCircle } from "react-icons/fa";
 import { Tooltip } from "react-tooltip";
 import { handleApiError } from "../../service/master.service";
@@ -12,22 +12,31 @@ import { TbArrowBackUp } from "react-icons/tb";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import * as Yup from "yup";
 import RequisitionPreview from "./requisitionPreview";
+import DatePicker from "react-datepicker";
 
 
 const RequisitionApproval = () => {
 
     const [requisitionFwdList, setRequisitionFwdList] = useState([]);
+    const [approvedList, setApprovedList] = useState([]);
     const employeeId = localStorage.getItem("empId");
     const [showReturnModal, setShowReutnModal] = useState(false);
     const [returnData, setReturnData] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [reqData, setShowReqData] = useState(null);
+    const [selectedTab, setSelectedTab] = useState("forwarded");
+    const fromDate = startOfYear(new Date());
+    const toDate = new Date();
+    const [fromDateSel, setFromDateSel] = useState(fromDate);
+    const [toDateSel, setToDateSel] = useState(toDate);
+
 
     useEffect(() => {
         if (employeeId) {
             fetchRequisitionApprovals(employeeId);
+            fetchApprovedList(employeeId);
         }
-    }, []);
+    }, [employeeId, fromDateSel, toDateSel]);
 
     const fetchRequisitionApprovals = async (id) => {
         try {
@@ -36,6 +45,15 @@ const RequisitionApproval = () => {
         } catch (error) {
             console.error("Error fetching requisitions:", error);
             Swal.fire("Error", "Failed to fetch requisition data. Please try again later.", "error");
+        }
+    };
+    const fetchApprovedList = async (id) => {
+        try {
+            const response = await getApprovedListByEmpId(id, format(fromDateSel, "yyyy-MM-dd"), format(toDateSel, "yyyy-MM-dd"));
+            setApprovedList(response?.data || []);
+        } catch (error) {
+            console.error("Error fetching approved requisitions:", error);
+            Swal.fire("Error", "Failed to fetch approved requisition data. Please try again later.", "error");
         }
     };
 
@@ -57,14 +75,56 @@ const RequisitionApproval = () => {
         { name: "Duration (Day)", selector: (row) => row.duration, sortable: true, align: 'text-center' },
         { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: 'text-center' },
         { name: "To Date", selector: (row) => row.toDate, sortable: true, align: 'text-center' },
-        { name: "Forwarded By", selector: (row) => row.forwardBy, sortable: true, align: 'text-left' },
-        { name: "Forward Date", selector: (row) => row.forwardDate, sortable: true, align: 'text-center' },
-        { name: "Status", selector: (row) => row.status, sortable: true, align: 'text-left' },
-        { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' },
+        ...(selectedTab === "forwarded"
+            ? [
+                {
+                    name: "Forwarded By",
+                    selector: (row) => row.forwardBy,
+                    sortable: true,
+                    align: "text-left"
+                },
+                {
+                    name: "Forward Date",
+                    selector: (row) => row.forwardDate,
+                    sortable: true,
+                    align: "text-center"
+                }
+            ]
+            : []),
+
+        ...(selectedTab === "approved"
+            ? [
+                {
+                    name: "Approved Date",
+                    selector: (row) => row.approvedDate,
+                    sortable: true,
+                    align: "text-center"
+                }
+            ]
+            : []),
+
+        {
+            name: "Status",
+            selector: (row) => row.status,
+            sortable: true,
+            align: "text-left"
+        },
+
+        ...(selectedTab === "forwarded"
+            ? [
+                {
+                    name: "Action",
+                    selector: (row) => row.action,
+                    sortable: true,
+                    align: "text-center"
+                }
+            ]
+            : [])
     ];
 
     const mappedData = () => {
-        return requisitionFwdList.map((item, index) => ({
+        const listToshow = selectedTab === "forwarded" ? requisitionFwdList : approvedList;
+        return listToshow?.map((item, index) => ({
             sn: index + 1,
             requisitionNumber: (
                 <button
@@ -81,6 +141,7 @@ const RequisitionApproval = () => {
             toDate: item.toDate ? format(new Date(item.toDate), "dd-MM-yyyy") : "-",
             forwardBy: item.forwardByName || "-",
             forwardDate: item.forwardDate ? format(new Date(item.forwardDate), "dd-MM-yyyy hh:mm a") : "-",
+            approvedDate: item.approvedDate ? format(new Date(item.approvedDate), "dd-MM-yyyy hh:mm a") : "-",
             status:
                 <span
                     className="status-badge-modern"
@@ -211,6 +272,12 @@ const RequisitionApproval = () => {
         }
     };
 
+    const handleChangeTab = (tab) => {
+        setSelectedTab(tab);
+    };
+
+
+
     return (
         <div>
             <Navbar />
@@ -224,8 +291,92 @@ const RequisitionApproval = () => {
                 </span>
             </h3>
 
+            <div className="position-relative mt-5">
+
+                {/* Centered Tabs */}
+                <div className="d-flex gap-4 justify-content-center">
+
+                    <button
+                        type="button"
+                        className={`btn position-relative btn-fixed-300 ${selectedTab === "forwarded"
+                            ? "btn-warning"
+                            : "btn-outline-secondary"
+                            } fw-semibold`}
+                        onClick={() => handleChangeTab("forwarded")}
+                    >
+                        Pending Requisition
+                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {requisitionFwdList.length}
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`btn position-relative btn-fixed-300 ${selectedTab === "approved"
+                            ? "btn-success"
+                            : "btn-outline-secondary"
+                            } fw-semibold`}
+                        onClick={() => handleChangeTab("approved")}
+                    >
+                        Approved Requisition
+                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {approvedList.length}
+                        </span>
+                    </button>
+
+                </div>
+
+                {/* Right Side Date Filters */}
+                {selectedTab === "approved" && (
+                <div className="position-absolute top-50 end-0 translate-middle-y d-flex gap-3">
+
+                    <div className="d-flex align-items-center">
+                        <label className="fw-bold me-2 mb-0 text-nowrap">
+                            From :
+                        </label>
+                        <DatePicker
+                            selected={fromDateSel}
+                            onChange={(newValue) => setFromDateSel(newValue)}
+                            className="form-control"
+                            placeholderText="From Date"
+                            dateFormat="dd-MM-yyyy"
+                            showYearDropdown
+                            showMonthDropdown
+                            dropdownMode="select"
+                            onKeyDown={(event) => event.preventDefault()}
+                            portalId="root"                          
+                            popperPlacement="bottom-end"
+                        />
+                    </div>
+
+                    <div className="d-flex align-items-center">
+                        <label className="fw-bold me-2 mb-0 text-nowrap">
+                            To :
+                        </label>
+                        <DatePicker
+                            selected={toDateSel}
+                            onChange={(newValue) => setToDateSel(newValue)}
+                            className="form-control"
+                            placeholderText="To Date"
+                            dateFormat="dd-MM-yyyy"
+                            showYearDropdown
+                            showMonthDropdown
+                            dropdownMode="select"
+                            onKeyDown={(event) => event.preventDefault()}
+                            portalId="root"                          
+                            popperPlacement="bottom-end"
+                        />
+                    </div>
+
+                </div>
+                )}
+
+            </div>
+
+
+
             <div id="card-body" className="p-2 mt-2">
-                {<Datatable columns={columns} data={mappedData()} />}
+                <Datatable columns={columns} data={mappedData()} />
             </div>
 
 

@@ -37,6 +37,7 @@ import MandatoryTraining from "../component/training/mandatoryTraining.jsx";
 import MandatoryTrainingAddEdit from "../component/training/mandatoryTrainingAddEdit.jsx";
 import LicenseExp from "../component/license/licenseExp.component.jsx";
 import ChangePassword from "../component/admin/changePassword.jsx";
+import HandingOverList from "../component/admin/handingOverList.jsx";
 
 
 function AppRoutes() {
@@ -162,6 +163,7 @@ function AppRoutes() {
         <Route path="/mandatory-training-add" element={<MandatoryTrainingAddEdit />} />
         <Route path='/license-exp' element={<LicenseExp />} />
         <Route path="/password-change" element={<ChangePassword />} />
+        <Route path="/handing-over" element={<HandingOverList />} />
       </Routes>
 
     </>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BiSolidExit } from "react-icons/bi";
-import { FaEnvelopeOpenText, FaEye, FaHome, FaHSquare, FaProjectDiagram, FaRupeeSign, FaTimes, FaUserClock, FaUsersCog, FaUserTie } from "react-icons/fa";
+import { FaEnvelopeOpenText, FaEye, FaHome, FaHSquare, FaProjectDiagram, FaRupeeSign, FaTimes, FaUserCircle, FaUserClock, FaUsersCog, FaUserTie } from "react-icons/fa";
 import { FaAddressCard, FaBell, FaCaretDown } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import "./navbar.css";
@@ -9,12 +9,13 @@ import * as FaIcons from "react-icons/fa6";
 import { checkUserProjectAccess, getReactAppUrls } from "../../service/master.service";
 import Swal from "sweetalert2";
 import { BsFileEarmarkText, BsFillBoxSeamFill } from "react-icons/bs";
-import { MdOutlineFactCheck } from "react-icons/md";
+import { MdOutlineChangeCircle, MdOutlineFactCheck } from "react-icons/md";
 import { IoAppsSharp } from "react-icons/io5";
 import { Tooltip } from "bootstrap";
 import { LuLayoutGrid } from "react-icons/lu";
 import config from "../../environment/config"
 import { logout } from "../../service/auth.service";
+import { RiExchangeLine, RiLogoutCircleRLine } from "react-icons/ri";
 
 const Navbar = () => {
 
@@ -180,7 +181,7 @@ const Navbar = () => {
 
             let count = 0;
             const checkInterval = setInterval(() => {
-                if (appWindow && count < 1) {
+                if (appWindow && count < 10) {
                     appWindow.postMessage(
                         { type: "LOGIN_SUCCESS", user: JSON.parse(userData) }, targetUrl);
                     count++;
@@ -333,7 +334,7 @@ const Navbar = () => {
                             </li> */}
 
 
-                            <li className="nav-item dropdown" >
+                            <li className="nav-item dropdown me-3" >
                                 <a href="#" className="nav-link nav-animate">
                                     <FaBell className="icon-name" />
                                     <span className='notification-count'>{Number(notifiCount)}</span>
@@ -394,11 +395,41 @@ const Navbar = () => {
 
                                 </ul>
                             </li>
-
-                            <li className="nav-item dropdown" >
-                                <a href="#" onClick={handleLogout} className="nav-link nav-animate">
-                                    <BiSolidExit className="icon-name" /> Logout
+                            <li className="nav-item dropdown position-relative ">
+                                <a
+                                    href="#"
+                                    className="nav-link dropdown-toggle "
+                                    role="button"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    onClick={(e) => e.preventDefault()}
+                                >
+                                    <FaUserCircle className="icon-name fa-user-circle" size={30} />
                                 </a>
+
+                                <ul
+                                    className="dropdown-menu mt-2" style={{ right: 0, left: "auto" }} >
+                                    <li className="dropdown-item">
+                                        <button
+                                            type="button"
+                                            className="dropdown-item"
+                                            onClick={() => navigate("/password-change")}
+                                        >
+                                           <MdOutlineChangeCircle className="ms-0 me-3" size={20}/> Change Password
+                                        </button>
+                                    </li>
+                                    <li className="dropdown-item">
+                                        <button
+                                            type="button"
+                                            className="dropdown-item"
+                                            onClick={handleLogout}
+                                        >
+                                         <RiLogoutCircleRLine  className="ms-0 me-4"/>   Logout
+                                        </button>
+                                    </li>
+
+
+                                </ul>
                             </li>
                         </ul>
 
