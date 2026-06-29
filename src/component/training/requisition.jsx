@@ -4,16 +4,18 @@ import Navbar from "../navbar/Navbar";
 import { useLocation, useNavigate } from "react-router-dom";
 import { forwardRequisition, getFeedbackList, getRequisitionPrint, getRequisitions, revokeRequisition } from "../../service/training.service";
 import Swal from "sweetalert2";
-import { format } from "date-fns";
+import { format, startOfYear } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { MdFeedback } from "react-icons/md";
 import { FaEdit } from "react-icons/fa";
 import RequisitionPrint from "../print/requisition";
 import { FaArrowLeft, FaEye, FaForward } from "react-icons/fa6";
-import { handleApiError } from "../../service/master.service";
+import { getEmployees, handleApiError } from "../../service/master.service";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
 import { usePermission } from "../../common/usePermission";
 import RequisitionPreview from "./requisitionPreview";
+import DatePicker from "react-datepicker";
+import Select from "react-select";
 
 
 const Requisition = () => {
@@ -29,16 +31,27 @@ const Requisition = () => {
     const [showModal, setShowModal] = useState(false);
     const [reqData, setShowReqData] = useState(null);
     const [selectedTab, setSelectedTab] = useState(location.state?.selectedTab || "free");
+    const fromDate = startOfYear(new Date());
+    const toDate = new Date();
+    const [fromDateSel, setFromDateSel] = useState(fromDate);
+    const [toDateSel, setToDateSel] = useState(toDate);
+    const [employeeList, setEmployeeList] = useState([]);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
 
+
+
+    useEffect(() => {
+        fetchEmployees();
+    }, []);
 
     useEffect(() => {
         fetchRequisitions();
         fetchFeedbacks();
-    }, []);
+    }, [fromDateSel, toDateSel, selectedEmployeeId]);
 
     const fetchRequisitions = async () => {
         try {
-            const response = await getRequisitions(empId, roleName);
+            const response = await getRequisitions(empId, roleName, format(fromDateSel, "yyyy-MM-dd"), format(toDateSel, "yyyy-MM-dd"), selectedEmployeeId);
             setRequisitionList(response?.data || []);
         } catch (error) {
             console.error("Error fetching requisitions:", error);
@@ -67,6 +80,65 @@ const Requisition = () => {
         }
     };
 
+    const fetchEmployees = async () => {
+        try {
+            const roleToPass = ["ROLE_ADMIN", "ROLE_DH"].includes(roleName) ? roleName : "ROLE_ADMIN";
+            const response = await getEmployees(empId, roleToPass);
+            const res = response?.data || [];
+
+            const employeeOptions = res.map((e) => ({
+                value: e.empId,
+                label: `${e.empName}, ${e.empDesigName}`,
+                divisionId: e.divisionId,
+            }));
+
+
+            setEmployeeList(employeeOptions);
+
+            if (!["ROLE_USER", "ROLE_DH"].includes(roleName)) {
+                setEmployeeList([
+                    {
+                        value: 0,
+                        label: "ALL",
+                        divisionId: null,
+                    },
+                    ...employeeOptions,
+                ]);
+                setSelectedEmployeeId(0);
+
+            } else if (roleName === "ROLE_DH") {
+                setEmployeeList(employeeOptions);
+
+                const exists = employeeOptions.some(
+                    (e) => Number(e.value) === Number(empId)
+                );
+                setSelectedEmployeeId(
+                    exists ? Number(empId) : null
+                );
+
+            } else {
+                const filteredEmployees = employeeOptions.filter(
+                    (e) => Number(e.value) === Number(empId)
+                );
+
+                setEmployeeList(filteredEmployees);
+
+                setSelectedEmployeeId(
+                    filteredEmployees.length > 0
+                        ? Number(empId)
+                        : null
+                );
+            }
+
+        } catch (error) {
+            console.error("Error fetching employees:", error);
+            Swal.fire(
+                "Error",
+                "Failed to fetch employee data. Please try again later.",
+                "error"
+            );
+        }
+    };
 
     const getTextColor = (bg) => {
         if (!bg) return "#000";
@@ -385,40 +457,111 @@ const Requisition = () => {
                 </span>
             </h3>
 
-            <div className="mt-5 d-flex justify-content-center">
-                <div className="p-2 bg-light rounded-pill border d-inline-flex gap-2 shadow-sm">
+            <div className="mt-5 mx-3">
 
-                    {/* Free Requisition */}
-                    <button
-                        type="button"
-                        onClick={() => handleChangeTab("free")}
-                        className={`btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 transition-all ${selectedTab === "free"
-                            ? "btn-warning border-0 shadow"
-                            : "btn-light border-0 text-secondary"
-                            }`}
-                    >
-                        <span className="fw-bold">Free Requisition</span>
-                        <span className={`badge rounded-pill ${selectedTab === "free" ? "bg-dark" : "bg-secondary text-white"}`}>
-                            {freeList.length}
-                        </span>
-                    </button>
+                {/* Top Row: Tabs + Filters */}
+                <div className="d-flex flex-wrap align-items-center gap-3">
 
-                    {/* Paid Requisition */}
-                    <button
-                        type="button"
-                        onClick={() => handleChangeTab("paid")}
-                        className={`btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 transition-all ${selectedTab === "paid"
-                            ? "btn-success border-0 shadow text-white"
-                            : "btn-light border-0 text-secondary"
-                            }`}
-                    >
-                        <span className="fw-bold">Paid Requisition</span>
-                        <span className={`badge rounded-pill ${selectedTab === "paid" ? "bg-white text-success" : "bg-secondary text-white"}`}>
-                            {paidList.length}
-                        </span>
-                    </button>
+                    {/* Tabs — left side */}
+                    <div className="p-2 bg-light rounded-pill border d-inline-flex gap-2 shadow-sm flex-shrink-0">
 
+                        {/* Free Requisition */}
+                        <button
+                            type="button"
+                            onClick={() => handleChangeTab("free")}
+                            className={`btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 transition-all ${selectedTab === "free"
+                                ? "btn-warning border-0 shadow"
+                                : "btn-light border-0 text-secondary"
+                                }`}
+                        >
+                            <span className="fw-bold">Free Requisition</span>
+                            <span className={`badge rounded-pill ${selectedTab === "free" ? "bg-dark" : "bg-secondary text-white"}`}>
+                                {freeList.length}
+                            </span>
+                        </button>
+
+                        {/* Paid Requisition */}
+                        <button
+                            type="button"
+                            onClick={() => handleChangeTab("paid")}
+                            className={`btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 transition-all ${selectedTab === "paid"
+                                ? "btn-success border-0 shadow text-white"
+                                : "btn-light border-0 text-secondary"
+                                }`}
+                        >
+                            <span className="fw-bold">Paid Requisition</span>
+                            <span className={`badge rounded-pill ${selectedTab === "paid" ? "bg-white text-success" : "bg-secondary text-white"}`}>
+                                {paidList.length}
+                            </span>
+                        </button>
+
+                    </div>
+
+                    {/* Filters — right side, wraps below on small screens */}
+                    <div className="d-flex flex-wrap align-items-center gap-3 ms-auto">
+
+                        {/* Employee */}
+                        <div className="d-flex align-items-center gap-2">
+                            <label className="fw-bold mb-0 text-nowrap">Employee :</label>
+                            <Select
+                                options={employeeList}
+                                value={employeeList?.find((e) => e.value === selectedEmployeeId) || null}
+                                onChange={(opt) => setSelectedEmployeeId(opt?.value ?? "")}
+                                isSearchable
+                                styles={{
+                                    container: (provided) => ({
+                                        ...provided,
+                                        minWidth: "180px",
+                                        width: "100%",
+                                    }),
+                                    singleValue: (provided) => ({
+                                        ...provided,
+                                        textAlign: "left",
+                                    }),
+                                }}
+                                menuPortalTarget={document.body}
+                            />
+                        </div>
+
+                        {/* From Date */}
+                        <div className="d-flex align-items-center gap-2">
+                            <label className="fw-bold mb-0 text-nowrap">From :</label>
+                            <DatePicker
+                                selected={fromDateSel}
+                                onChange={(newValue) => setFromDateSel(newValue)}
+                                className="form-control"
+                                placeholderText="From Date"
+                                dateFormat="dd-MM-yyyy"
+                                showYearDropdown
+                                showMonthDropdown
+                                dropdownMode="select"
+                                onKeyDown={(event) => event.preventDefault()}
+                                portalId="root"
+                                popperPlacement="bottom-end"
+                            />
+                        </div>
+
+                        {/* To Date */}
+                        <div className="d-flex align-items-center gap-2">
+                            <label className="fw-bold mb-0 text-nowrap">To :</label>
+                            <DatePicker
+                                selected={toDateSel}
+                                onChange={(newValue) => setToDateSel(newValue)}
+                                className="form-control"
+                                placeholderText="To Date"
+                                dateFormat="dd-MM-yyyy"
+                                showYearDropdown
+                                showMonthDropdown
+                                dropdownMode="select"
+                                onKeyDown={(event) => event.preventDefault()}
+                                portalId="root"
+                                popperPlacement="bottom-end"
+                            />
+                        </div>
+
+                    </div>
                 </div>
+
             </div>
 
             <div id="card-body" className="p-2 mt-2">

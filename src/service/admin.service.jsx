@@ -177,3 +177,39 @@ export const updatePassWord = async (data) => {
     throw error;
   }
 }
+
+export const getHandingOverList = async (fromDate, toDate) => {
+    try {
+        return (await axios.get(`${API_URL}api/admin/handing-over`, { params: { fromDate, toDate }, headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getHandingOverList():', error);
+        throw error;
+    }
+};
+
+export const insertHandingOver = async (payload) => {
+    try {
+        return (await axios.post(`${API_URL}api/admin/add-handing-over`, payload, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in insertHandingOver():', error);
+        throw error;
+    }
+};
+
+export const updateHandingOver= async (payload) => {
+    try {
+        return (await axios.put(`${API_URL}api/admin/update-handing-over`, payload, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in updateHandingOver():', error);
+        throw error;
+    }
+}
+
+export const revokeHandingOver = async (handingOverId) => {
+    try {
+        return (await axios.put(`${API_URL}api/admin/revoke-handing-over`, {}, { params: { handingOverId }, headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in revokeHandingOver():', error);
+        throw error;
+    }
+}

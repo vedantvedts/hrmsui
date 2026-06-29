@@ -172,10 +172,10 @@ export const updateRequisitionData = async (formData) => {
     }
 };
 
-export const getRequisitions = async (empId, roleName) => {
+export const getRequisitions = async (empId, roleName, fromDate, toDate, selectedEmployeeId) => {
     try {
         return (await axios.get(`${API_URL}api/training/requisition`, {
-            params: { empId, roleName },
+            params: { empId, roleName, fromDate, toDate, selectedEmployeeId },
             headers: { 'Content-Type': 'application/json', ...authHeader() }
         })).data;
     } catch (error) {
@@ -332,7 +332,7 @@ export const getRequisitionApprovals = async (id) => {
             headers: { 'Content-Type': 'application/json', ...authHeader() }
         })).data;
     } catch (error) {
-        console.error('Error occurred in getRequisitionPrint():', error);
+        console.error('Error occurred in getRequisitionApprovals():', error);
         throw error;
     }
 };
@@ -431,10 +431,14 @@ export const feedbackFileDownload = async (feedId, type) => {
 };
 
 
-export const getReqApprovedList = async () => {
+export const getReqApprovedList = async (fromDate, toDate) => {
     try {
         return (await axios.get(`${API_URL}api/training/req-approved-list`, {
-            params: { roleName: localStorage.getItem("roleName") },
+            params: {
+                empId: localStorage.getItem("empId"),
+                fromDate: fromDate,
+                toDate: toDate
+            },
             headers: { 'Content-Type': 'application/json', ...authHeader() }
         })).data;
     } catch (error) {
@@ -732,6 +736,35 @@ export const acceptMandatoryTraining = async (data) => {
         return (await axios.post(`${API_URL}api/training/accept-training`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
     } catch (error) {
         console.error('Error occurred in acceptMandatoryTraining():', error);
+        throw error;
+    }
+};
+
+export const getApprovedListByEmpId = async (id, fromDate, toDate) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/approved-list-byEmpId`, {
+            params: { empId: id, fromDate: fromDate, toDate: toDate },
+            headers: { 'Content-Type': 'application/json', ...authHeader() }
+        })).data;
+    } catch (error) {
+        console.error('Error occurred in getApprovedListByEmpId():', error);
+        throw error;
+    }
+};
+
+
+export const getApprovalType = async (id) => {
+    try {
+        const response = await axios.get(`${API_URL}api/training/approval-type`, {
+            params: { empId: id },
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeader()
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error occurred in getApprovalType():', error);
         throw error;
     }
 };

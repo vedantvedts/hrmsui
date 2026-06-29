@@ -72,7 +72,8 @@
     transition: color 1.5s ease;
 }
 
-.nav-animate {
+.nav-animate,
+.fa-user-circle {
     color: white !important;
 }
 
@@ -466,8 +467,15 @@
 }
 
 @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* --- Main Panel --- */
@@ -504,7 +512,10 @@
     gap: 12px;
 }
 
-.header-icon { color: #3b82f6; font-size: 18px; }
+.header-icon {
+    color: #3b82f6;
+    font-size: 18px;
+}
 
 .panel-header h5 {
     margin: 0;
@@ -537,7 +548,10 @@
     transition: all 0.2s;
 }
 
-.close-panel-btn:hover { background: #fee2e2; color: #ef4444; }
+.close-panel-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
 
 /* --- Panel Body & Cards --- */
 .panel-body {
@@ -547,8 +561,14 @@
 }
 
 /* Custom Scrollbar */
-.panel-body::-webkit-scrollbar { width: 6px; }
-.panel-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+.panel-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-body::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
 
 .notification-card {
     display: flex;
@@ -582,7 +602,10 @@
 }
 
 /* Content Area */
-.notification-content { flex: 1; min-width: 0; }
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
 
 .emp-name {
     display: block;
@@ -602,7 +625,8 @@
 /* --- FOOTER ROW (The fix for your layout) --- */
 .notification-footer-row {
     display: flex;
-    justify-content: space-between; /* Pins button left, date right */
+    justify-content: space-between;
+    /* Pins button left, date right */
     align-items: center;
     margin-top: auto;
 }
@@ -610,7 +634,8 @@
 .timestamp {
     font-size: 11px;
     color: #94a3b8;
-    white-space: nowrap; /* Prevents date wrapping */
+    white-space: nowrap;
+    /* Prevents date wrapping */
     font-weight: 500;
 }
 
@@ -659,4 +684,7 @@
     cursor: pointer;
 }
 
-.footer-close-btn:hover { color: #1e293b; }
+.footer-close-btn:hover {
+    color: #1e293b;
+}
+
