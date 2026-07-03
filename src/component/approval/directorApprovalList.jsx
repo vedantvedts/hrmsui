@@ -5,6 +5,7 @@ import { approveRequisition, getReqApprovedList, recommendToDFA } from "../../se
 import { format } from "date-fns";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
 import Swal from "sweetalert2";
+import { getCashLimitList } from "../../service/admin.service";
 
 
 const DirectorApprovalList = () => {
@@ -15,10 +16,12 @@ const DirectorApprovalList = () => {
     const [showModal, setShowModal] = useState(false);
     const [reqData, setShowReqData] = useState(null);
     const [selectedTab, setSelectedTab] = useState("free");
+    const [cashLimit, setCashLimit] = useState([]);
 
 
     useEffect(() => {
         fetchRequsitionApprovedList();
+        fetchCashLimit();
     }, []);
 
     const fetchRequsitionApprovedList = async () => {
@@ -30,9 +33,24 @@ const DirectorApprovalList = () => {
         }
     };
 
+    const fetchCashLimit = async () => {
+        try {
+            const response = await getCashLimitList();
+            setCashLimit(response?.data || []);
+        } catch (error) {
+            console.error('Error fetching cash limit:', error);
+        }
+    };
+
     const freeList = requsitionApprovedList.filter(item => item.registrationFee === 0);
-    const paidList = requsitionApprovedList.filter(item => item.registrationFee > 0);
-    const filteredList = selectedTab === "free" ? freeList : paidList;
+    const paidList = requsitionApprovedList.filter(item => item.registrationFee > 0 && (!cashLimit[0] || item.registrationFee < cashLimit[0].cashLimit));
+    const paidDFAList = requsitionApprovedList.filter(item => cashLimit[0] && item.registrationFee >= cashLimit[0].cashLimit);
+    const filteredList =
+        selectedTab === "free"
+            ? freeList
+            : selectedTab === "paid-dfa"
+                ? paidDFAList
+                : paidList;
 
     const columns = [
         { name: "Select", selector: (row) => row.select, sortable: true, align: 'text-center' },
@@ -245,6 +263,18 @@ const DirectorApprovalList = () => {
                     </span>
                 </button>
 
+                <button
+                    type="button"
+                    className={`btn position-relative btn-fixed-300 ${selectedTab === "paid-dfa" ? "btn-info" : "btn-outline-info"} fw-semibold`}
+                    onClick={() => handleChangeTab("paid-dfa")}
+                >
+                    Paid Requisition - DFA
+                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {paidDFAList.length}
+                    </span>
+                </button>
+
+
                 {/* Paid */}
                 <button
                     type="button"
@@ -271,13 +301,14 @@ const DirectorApprovalList = () => {
                 >
                     Approve
                 </button>
-                {selectedTab === "paid" &&
+                {selectedTab === "paid-dfa" &&
                     <button
                         className="add"
                         onClick={handleRecommend}
                     >
                         Recommend to DFA
-                    </button>}
+                    </button>
+                }
             </div>
 
             {showModal &&

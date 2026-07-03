@@ -163,7 +163,7 @@ const RequisitionApproval = () => {
                                 className="btn btn-sm btn-success me-2"
                                 onClick={() => handleForward(item)}
                                 data-tooltip-id="Tooltip"
-                                data-tooltip-content="Approve"
+                                data-tooltip-content={["ROLE_DH", "ROLE_SA_HRT", "ROLE_ADMIN"].includes(localStorage.getItem("roleName")) ? "Forward" : "Recommend"}
                                 data-tooltip-place="top"
                             >
                                 <FaCheckCircle className="fs-6" />
@@ -233,6 +233,8 @@ const RequisitionApproval = () => {
                     timer: 1500,
                 });
                 fetchRequisitionApprovals(employeeId);
+                fetchApprovedList(employeeId);
+                setSelectedTab("approved");
             } else {
                 Swal.fire("Warning", response.message, "warning");
             }
@@ -328,47 +330,47 @@ const RequisitionApproval = () => {
 
                 {/* Right Side Date Filters */}
                 {selectedTab === "approved" && (
-                <div className="position-absolute top-50 end-0 translate-middle-y d-flex gap-3">
+                    <div className="position-absolute top-50 end-0 translate-middle-y d-flex gap-3">
 
-                    <div className="d-flex align-items-center">
-                        <label className="fw-bold me-2 mb-0 text-nowrap">
-                            From :
-                        </label>
-                        <DatePicker
-                            selected={fromDateSel}
-                            onChange={(newValue) => setFromDateSel(newValue)}
-                            className="form-control"
-                            placeholderText="From Date"
-                            dateFormat="dd-MM-yyyy"
-                            showYearDropdown
-                            showMonthDropdown
-                            dropdownMode="select"
-                            onKeyDown={(event) => event.preventDefault()}
-                            portalId="root"                          
-                            popperPlacement="bottom-end"
-                        />
+                        <div className="d-flex align-items-center">
+                            <label className="fw-bold me-2 mb-0 text-nowrap">
+                                From :
+                            </label>
+                            <DatePicker
+                                selected={fromDateSel}
+                                onChange={(newValue) => setFromDateSel(newValue)}
+                                className="form-control"
+                                placeholderText="From Date"
+                                dateFormat="dd-MM-yyyy"
+                                showYearDropdown
+                                showMonthDropdown
+                                dropdownMode="select"
+                                onKeyDown={(event) => event.preventDefault()}
+                                portalId="root"
+                                popperPlacement="bottom-end"
+                            />
+                        </div>
+
+                        <div className="d-flex align-items-center">
+                            <label className="fw-bold me-2 mb-0 text-nowrap">
+                                To :
+                            </label>
+                            <DatePicker
+                                selected={toDateSel}
+                                onChange={(newValue) => setToDateSel(newValue)}
+                                className="form-control"
+                                placeholderText="To Date"
+                                dateFormat="dd-MM-yyyy"
+                                showYearDropdown
+                                showMonthDropdown
+                                dropdownMode="select"
+                                onKeyDown={(event) => event.preventDefault()}
+                                portalId="root"
+                                popperPlacement="bottom-end"
+                            />
+                        </div>
+
                     </div>
-
-                    <div className="d-flex align-items-center">
-                        <label className="fw-bold me-2 mb-0 text-nowrap">
-                            To :
-                        </label>
-                        <DatePicker
-                            selected={toDateSel}
-                            onChange={(newValue) => setToDateSel(newValue)}
-                            className="form-control"
-                            placeholderText="To Date"
-                            dateFormat="dd-MM-yyyy"
-                            showYearDropdown
-                            showMonthDropdown
-                            dropdownMode="select"
-                            onKeyDown={(event) => event.preventDefault()}
-                            portalId="root"                          
-                            popperPlacement="bottom-end"
-                        />
-                    </div>
-
-                </div>
                 )}
 
             </div>

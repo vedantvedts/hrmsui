@@ -768,3 +768,21 @@ export const getApprovalType = async (id) => {
         throw error;
     }
 };
+
+export const addReqConfirmation = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/confirm`, data, { headers: { 'Content-Type': 'multipart/form-data', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in addReqConfirmation():', error);
+        throw error;
+    }
+};
+
+export const addReqAttendance = async (data) => {
+    try {
+        return (await axios.post(`${API_URL}api/training/attend`, data, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in addReqAttendance():', error);
+        throw error;
+    }
+};

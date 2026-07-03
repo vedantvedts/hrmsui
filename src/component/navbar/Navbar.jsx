@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BiSolidExit } from "react-icons/bi";
-import { FaEnvelopeOpenText, FaEye, FaHome, FaHSquare, FaProjectDiagram, FaRupeeSign, FaTimes, FaUserCircle, FaUserClock, FaUsersCog, FaUserTie } from "react-icons/fa";
+import { FaEnvelopeOpenText, FaEye, FaHome, FaHSquare, FaProjectDiagram, FaRupeeSign, FaTimes, FaUserCircle, FaUserClock, FaUsersCog, FaUserShield, FaUserTie } from "react-icons/fa";
 import { FaAddressCard, FaBell, FaCaretDown } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import "./navbar.css";
@@ -16,6 +16,9 @@ import { LuLayoutGrid } from "react-icons/lu";
 import config from "../../environment/config"
 import { logout } from "../../service/auth.service";
 import { RiExchangeLine, RiLogoutCircleRLine } from "react-icons/ri";
+import AlertConfirmation, { showAlert } from "../../common/AlertConfirmation.component";
+import Select from "react-select";
+
 
 const Navbar = () => {
 
@@ -24,14 +27,25 @@ const Navbar = () => {
     const [headerModuleDetailList, setHeaderModuleDetailList] = useState([]);
     const [notifiCount, setNotifiCount] = useState(0);
     const [notifiList, setNotifiList] = useState([]);
+
     const title = localStorage.getItem("title");
     const salutation = localStorage.getItem("salutation");
     const empName = localStorage.getItem("empName");
     const designationCode = localStorage.getItem("designationCode");
     const roleId = localStorage.getItem("roleId");
+    const userName = localStorage.getItem("username") || "User";
+    const roleName = localStorage.getItem("roleName");
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    const encryptedUser = btoa(user.username);
+
+    const currentRoleName = roleName.split("_")[1];
+    const [selectedRole, setSelectedRole] = useState(null);
+
     const [appUrls, setAppUrls] = useState({});
     const [isLauncherOpen, setIsLauncherOpen] = useState(false);
     const [showAll, setShowAll] = useState(false);
+    const [showRoleModal, setShowRoleModal] = useState(false);
 
     const handleShowAll = () => {
         setShowAll(true);
@@ -41,15 +55,27 @@ const Navbar = () => {
         setShowAll(false);
     };
 
+    const handleRoleClose = () => {
+        setShowRoleModal(false);
+    };
 
     const LABCODE = config.LABCODE;
 
+    const roles = JSON.parse(localStorage.getItem("roles") || []);
+
+    const roleOptions = roles.map(item => ({
+        label: item,
+        value: item
+    }));
+
+    const defaultRole = roleOptions.find(item => item.value === roleName);
+
     useEffect(() => {
-        if (roleId) {
-            fetchHeaderModuleList(roleId);
-            fetchHeaderModuleDetailList(roleId);
+        if (roleName) {
+            fetchHeaderModuleList(roleName);
+            fetchHeaderModuleDetailList(roleName);
         }
-    }, [roleId]);
+    }, [roleName]);
 
 
     const handleLogout = async (e) => {
@@ -60,9 +86,9 @@ const Navbar = () => {
     };
 
 
-    const fetchHeaderModuleList = async (roleId) => {
+    const fetchHeaderModuleList = async (role) => {
         try {
-            const moduleListResponse = await getHeaderModuleList(roleId);
+            const moduleListResponse = await getHeaderModuleList(role);
 
             setHeaderModuleList(moduleListResponse);
         } catch (error) {
@@ -70,9 +96,9 @@ const Navbar = () => {
         }
     };
 
-    const fetchHeaderModuleDetailList = async (roleId) => {
+    const fetchHeaderModuleDetailList = async (role) => {
         try {
-            const moduleDetailListResponse = await getHeaderModuleDetailList(roleId);
+            const moduleDetailListResponse = await getHeaderModuleDetailList(role);
             setHeaderModuleDetailList(moduleDetailListResponse);
             const notifiCount = await getNotifiCount();
             const notifiList = await getNotifiList();
@@ -109,6 +135,19 @@ const Navbar = () => {
         return `${cleanTitle} ${cleanName}`.trim() + cleanDesignation;
     };
 
+    const handleSubmit = async () => {
+        if (!selectedRole || selectedRole?.value === roleName) {
+            showAlert("Please change the Role Before Submit.", null, 'warning', null);
+            return;
+        }
+        const confirm = await AlertConfirmation({ title: 'Are you Sure to change?', message: '' });
+        if (confirm) {
+            localStorage.setItem("roleName", selectedRole?.value);
+            navigate("/dashboard");
+            showAlert(null, "Role Change Successfull!", 'success', null);
+            handleRoleClose();
+        }
+    }
 
     useEffect(() => {
         fetchAppUrls();
@@ -128,11 +167,6 @@ const Navbar = () => {
             console.error("Failed to fetch app URLs:", error);
         }
     };
-
-    const roleName = localStorage.getItem("roleName");
-
-    const user = JSON.parse(localStorage.getItem("user"));
-    const encryptedUser = btoa(user.username);
 
     const apps = [
         { code: 'PMS', name: "Project Management System", type: 'jsp', icon: <FaProjectDiagram />, color: '#2196f3' },
@@ -404,18 +438,29 @@ const Navbar = () => {
                                     aria-expanded="false"
                                     onClick={(e) => e.preventDefault()}
                                 >
-                                    <FaUserCircle className="icon-name fa-user-circle" size={30} />
+                                    {userName}  <FaUserCircle className="icon-name fa-user-circle" size={30} />
                                 </a>
 
                                 <ul
                                     className="dropdown-menu mt-2" style={{ right: 0, left: "auto" }} >
+                                    {roleOptions.length > 1 &&
+                                        <li className="dropdown-item">
+                                            <button
+                                                type="button"
+                                                className="dropdown-item"
+                                                onClick={() => setShowRoleModal(true)}
+                                            >
+                                                <RiExchangeLine className="ms-0 me-3" size={20} /> Change Role
+                                            </button>
+                                        </li>
+                                    }
                                     <li className="dropdown-item">
                                         <button
                                             type="button"
                                             className="dropdown-item"
                                             onClick={() => navigate("/password-change")}
                                         >
-                                           <MdOutlineChangeCircle className="ms-0 me-3" size={20}/> Change Password
+                                            <MdOutlineChangeCircle className="ms-0 me-3" size={20} /> Change Password
                                         </button>
                                     </li>
                                     <li className="dropdown-item">
@@ -424,7 +469,7 @@ const Navbar = () => {
                                             className="dropdown-item"
                                             onClick={handleLogout}
                                         >
-                                         <RiLogoutCircleRLine  className="ms-0 me-4"/>   Logout
+                                            <RiLogoutCircleRLine className="ms-0 me-4" />   Logout
                                         </button>
                                     </li>
 
@@ -513,6 +558,70 @@ const Navbar = () => {
                     </div>
                 </div>
             </div>
+
+            {showRoleModal && <div
+                className={`modern-modal-overlay ${showRoleModal ? "open" : ""}`}
+                onClick={handleRoleClose}
+            >
+                <div className="modern-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="modern-modal-header">
+                        <span className="modern-modal-title">Role Change</span>
+                        <span className="searchClose" onClick={handleRoleClose}>Close</span>
+                    </div>
+                    <div className="modal-body">
+                        <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: 'center',
+                            gap: "10px",
+                            padding: "26px",
+                            borderRadius: "10px",
+                            background: "#eef2ff"
+                        }}>
+                            <FaUserShield color="#4f46e5" size={22} />
+
+                            <span style={{ fontSize: "18px", fontWeight: '600', color: "#555" }}>
+                                Logged In Role:
+                            </span>
+
+                            <span style={{
+                                padding: "4px 10px",
+                                borderRadius: "999px",
+                                background: "#4f46e5",
+                                color: "#fff",
+                                fontSize: "13px",
+                                fontWeight: "500"
+                            }}>
+                                {currentRoleName}
+                            </span>
+                        </div>
+
+                        <div className="d-flex justify-content-center align-items-center gap-2 mt-5">
+                            <label className="form-label mb-0 fw-semibold">
+                                Change Role:
+                            </label>
+
+                            <Select
+                                className="w-30"
+                                options={roleOptions}
+                                value={selectedRole || defaultRole}
+                                onChange={setSelectedRole}
+                            />
+                        </div>
+                        <div className="d-flex justify-content-center mt-5">
+                            <button className="btn-change" onClick={() => handleSubmit()}>
+                                Change
+                            </button>
+                        </div>
+                    </div>
+                    <div className="d-flex justify-content-start p-4">
+                        <span className="info-text">
+                            Note: If roles are changed, you will be redirected to the dashboard.
+                        </span>
+                    </div>
+                </div>
+            </div>}
+
         </nav>
     )
 }

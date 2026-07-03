@@ -100,7 +100,7 @@ const RequisitionPreview = ({ reqData, setShowModal }) => {
                                         </span>
                                         <div className="view-value">
                                             {reqData.initiatingOfficerName ? `${reqData?.initiatingOfficerName}, ${reqData?.empDesigName}`
-                                                : (reqData.forwardByName || "-")}
+                                                : "-"}
                                         </div>
                                     </div>
 

@@ -50,18 +50,24 @@ export const getRolesList = async () => {
   }
 };
 
-export const getHeaderModuleList = async (role) => {
+export const getHeaderModuleList = async (roleName) => {
   try {
-    return (await axios.post(`${API_URL}api/admin/header-module`, role, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    return (await axios.get(`${API_URL}api/admin/header-module`, {
+      params: { roleName },
+      headers: { 'Content-Type': 'application/json', ...authHeader() }
+    })).data;
   } catch (error) {
     console.error('Error occurred in getHeaderModuleList:', error);
     throw error;
   }
 };
 
-export const getHeaderModuleDetailList = async (role) => {
+export const getHeaderModuleDetailList = async (roleName) => {
   try {
-    return (await axios.post(`${API_URL}api/admin/header-detail`, role, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    return (await axios.get(`${API_URL}api/admin/header-detail`, {
+      params: { roleName },
+      headers: { 'Content-Type': 'application/json', ...authHeader() }
+    })).data;
   } catch (error) {
     console.error('Error occurred in getHeaderModuleDetailList:', error);
     throw error;
@@ -179,37 +185,92 @@ export const updatePassWord = async (data) => {
 }
 
 export const getHandingOverList = async (fromDate, toDate) => {
-    try {
-        return (await axios.get(`${API_URL}api/admin/handing-over`, { params: { fromDate, toDate }, headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
-    } catch (error) {
-        console.error('Error occurred in getHandingOverList():', error);
-        throw error;
-    }
+  try {
+    return (await axios.get(`${API_URL}api/admin/handing-over`, { params: { fromDate, toDate }, headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+  } catch (error) {
+    console.error('Error occurred in getHandingOverList():', error);
+    throw error;
+  }
 };
 
 export const insertHandingOver = async (payload) => {
-    try {
-        return (await axios.post(`${API_URL}api/admin/add-handing-over`, payload, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
-    } catch (error) {
-        console.error('Error occurred in insertHandingOver():', error);
-        throw error;
-    }
+  try {
+    return (await axios.post(`${API_URL}api/admin/add-handing-over`, payload, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+  } catch (error) {
+    console.error('Error occurred in insertHandingOver():', error);
+    throw error;
+  }
 };
 
-export const updateHandingOver= async (payload) => {
-    try {
-        return (await axios.put(`${API_URL}api/admin/update-handing-over`, payload, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
-    } catch (error) {
-        console.error('Error occurred in updateHandingOver():', error);
-        throw error;
-    }
+export const updateHandingOver = async (payload) => {
+  try {
+    return (await axios.put(`${API_URL}api/admin/update-handing-over`, payload, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+  } catch (error) {
+    console.error('Error occurred in updateHandingOver():', error);
+    throw error;
+  }
 }
 
 export const revokeHandingOver = async (handingOverId) => {
-    try {
-        return (await axios.put(`${API_URL}api/admin/revoke-handing-over`, {}, { params: { handingOverId }, headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
-    } catch (error) {
-        console.error('Error occurred in revokeHandingOver():', error);
-        throw error;
-    }
+  try {
+    return (await axios.put(`${API_URL}api/admin/revoke-handing-over`, {}, { params: { handingOverId }, headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+  } catch (error) {
+    console.error('Error occurred in revokeHandingOver():', error);
+    throw error;
+  }
 }
+
+
+// Get Cash Limit List
+export const getCashLimitList = async () => {
+  try {
+    const response = await axios.get(
+      `${API_URL}api/admin/cash-limit-list`,
+      { headers: authHeader() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error occurred in getCashLimitList:", error);
+    throw error;
+  }
+};
+
+// Add Cash Limit
+export const addCashLimit = async (cashLimit) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}api/admin/add-cash-limit`,
+      cashLimit,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader(),
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error occurred in addCashLimit:", error);
+    throw error;
+  }
+};
+
+// Update Cash Limit
+export const updateCashLimit = async (id, cashLimit) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}api/admin/update-cash-limit/${id}`,
+      cashLimit,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader(),
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error occurred in updateCashLimit:", error);
+    throw error;
+  }
+};

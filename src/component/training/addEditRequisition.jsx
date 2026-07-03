@@ -678,6 +678,27 @@ const AddEditRequisition = () => {
                                                 />
                                                 Others
                                             </label>
+
+                                        <label>
+                                                <Field
+                                                    type="radio"
+                                                    name="modeOfPayment"
+                                                    value="NA"
+                                                    className="form-check-input me-1"
+                                                    onChange={(e) => {
+                                                        setFieldValue("modeOfPayment", "NA");
+                                                        // clear ECS files
+                                                        setFieldValue("multipartFileEcs", null);
+                                                        setFieldValue("multipartFileCheque", null);
+                                                        setFieldValue("multipartFilePan", null);
+                                                        // clear Others files
+                                                        setFieldValue("reason", "");
+                                                        setFieldValue("multipartFileBrochure", null);
+                                                    }}
+                                                />
+                                                NA
+                                            </label>
+
                                         </div>
 
                                         <ErrorMessage name="modeOfPayment" component="div" className="invalid-msg" />
