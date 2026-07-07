@@ -99,7 +99,7 @@ const Requisition = () => {
 
             setEmployeeList(employeeOptions);
 
-            if (!["ROLE_USER", "ROLE_DH"].includes(roleName)) {
+            if (!["ROLE_USER"].includes(roleName)) {
                 setEmployeeList([
                     {
                         value: 0,
@@ -157,13 +157,13 @@ const Requisition = () => {
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
         { name: "Requisition No", selector: (row) => row.requisitionNumber, sortable: true, align: 'text-left' },
+        { name: "Participant", selector: (row) => row.initiatingOfficer, sortable: true, align: 'text-left' },
+        { name: "Designation", selector: (row) => row.designation, sortable: true, align: 'text-center' },
         { name: "Course", selector: (row) => row.courseName, sortable: true, align: 'text-left' },
         { name: "Organizer", selector: (row) => row.organizer, sortable: true, align: 'text-left' },
         { name: "Duration (Day)", selector: (row) => row.duration, sortable: true, align: 'text-center' },
         { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: 'text-center' },
         { name: "To Date", selector: (row) => row.toDate, sortable: true, align: 'text-center' },
-        { name: "Participant", selector: (row) => row.initiatingOfficer, sortable: true, align: 'text-left' },
-        { name: "Designation", selector: (row) => row.designation, sortable: true, align: 'text-center' },
         { name: "Status", selector: (row) => row.status, sortable: true, align: 'text-left' },
         { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' },
     ];

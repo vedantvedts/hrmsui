@@ -7,6 +7,7 @@ import { FaCheckCircle } from 'react-icons/fa';
 import { FaEye } from 'react-icons/fa6';
 import { Tooltip } from 'react-tooltip';
 import TrainingStepper from '../training/trainingStepper';
+import { getCashLimitList } from "../../service/admin.service";
 
 const Transaction = () => {
 
@@ -14,10 +15,12 @@ const Transaction = () => {
     const [transactionDetails, setTransactionDetails] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [remarkData, setRemarkData] = useState('');
+    const [cashLimit, setCashLimit] = useState([]);
 
     useEffect(() => {
         if (reqData && reqData.requisitionId) {
             fetchTransactionDetails(reqData.requisitionId);
+            fetchCashLimitList();
         }
     }, []);
 
@@ -30,6 +33,14 @@ const Transaction = () => {
         }
     };
 
+    const fetchCashLimitList = async () => {
+        try {
+            const response = await getCashLimitList();
+            setCashLimit(response?.data || []);
+        } catch (error) {
+            console.error("Error fetching cash limit:", error);
+        }
+    };
 
     function calculateWorkingDayGap(startDate, endDate) {
         if (!startDate || !endDate) return null;
@@ -87,7 +98,7 @@ const Transaction = () => {
         setRemarkData(item);
     };
 
-    const freeSteps = [
+    const commonSteps = [
         { code: "AA", label: "Created by user" },
         { code: "AR", label: "Recommended by DH" },
         { code: "AS", label: "Verified By SA-HRT" },
@@ -126,13 +137,19 @@ const Transaction = () => {
 
         // FREE TRAINING
         if (registrationFee === 0) {
-            steps = [...freeSteps];
+            steps = [...commonSteps];
         }
 
         // PAID TRAINING
         else {
 
-            steps = [...paidBaseSteps];
+            if (registrationFee < cashLimit[0]?.cashLimit) {
+                steps = [...commonSteps];
+            } else if (registrationFee >= cashLimit[0]?.cashLimit) {
+                steps = [...paidBaseSteps];
+            } else {
+                steps = [...commonSteps];
+            }
 
             // check if FC exists in transaction
             const hasFinance = transactions.some(

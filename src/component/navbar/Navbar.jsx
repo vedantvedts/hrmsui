@@ -6,10 +6,10 @@ import { useNavigate } from "react-router-dom";
 import "./navbar.css";
 import { getHeaderModuleDetailList, getHeaderModuleList, getNotifiCount, getNotifiList, updateNotification } from "../../service/admin.service";
 import * as FaIcons from "react-icons/fa6";
-import { checkUserProjectAccess, getReactAppUrls } from "../../service/master.service";
+import { checkUserProjectAccess, getReactAppUrls, getUserById } from "../../service/master.service";
 import Swal from "sweetalert2";
 import { BsFileEarmarkText, BsFillBoxSeamFill } from "react-icons/bs";
-import { MdOutlineChangeCircle, MdOutlineFactCheck } from "react-icons/md";
+import { MdOutlineChangeCircle, MdOutlineFactCheck, MdOutlineFingerprint } from "react-icons/md";
 import { IoAppsSharp } from "react-icons/io5";
 import { Tooltip } from "bootstrap";
 import { LuLayoutGrid } from "react-icons/lu";
@@ -35,6 +35,7 @@ const Navbar = () => {
     const roleId = localStorage.getItem("roleId");
     const userName = localStorage.getItem("username") || "User";
     const roleName = localStorage.getItem("roleName");
+    const loginId = localStorage.getItem("loginId");
 
     const user = JSON.parse(localStorage.getItem("user"));
     const encryptedUser = btoa(user.username);
@@ -243,6 +244,24 @@ const Navbar = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isLauncherOpen]);
 
+
+    const handleRoleChange = async () => {
+        try {
+            if (roleOptions.length <= 1) {
+                showAlert("No other roles available to change.", null, 'warning', null);
+                return;
+            }
+            const userData = await getUserById(loginId);
+            if (userData?.data) {
+                localStorage.setItem("roles", JSON.stringify(userData.data.roleNames));
+                setShowRoleModal(true);
+            }
+        } catch (error) {
+            console.error("Error fetching user roles:", error);
+            showAlert("Failed to fetch user roles. Please try again later.", null, 'error', null);
+        }
+    };
+
     return (
         <nav className="navbar sticky-top navbar-expand-lg navbar-dark bg-dark-new nav-ams">
             <div className="row w-100">
@@ -258,8 +277,8 @@ const Navbar = () => {
                                             <span className="neon-text">HRMS</span>
                                         </h3>
 
-                                        <h6 className="mb-0 d-flex align-items-end login-name" style={{ fontSize: "1rem" }}>
-                                            {formatName()}
+                                        <h6 className="mb-0 d-flex align-items-end login-name" style={{ fontSize: "0.9rem" }}>
+                                            {formatName()} ({currentRoleName})
                                         </h6>
                                     </div>
                                 </a>
@@ -448,7 +467,7 @@ const Navbar = () => {
                                             <button
                                                 type="button"
                                                 className="dropdown-item"
-                                                onClick={() => setShowRoleModal(true)}
+                                                onClick={handleRoleChange}
                                             >
                                                 <RiExchangeLine className="ms-0 me-3" size={20} /> Change Role
                                             </button>
@@ -461,6 +480,15 @@ const Navbar = () => {
                                             onClick={() => navigate("/password-change")}
                                         >
                                             <MdOutlineChangeCircle className="ms-0 me-3" size={20} /> Change Password
+                                        </button>
+                                    </li>
+                                    <li className="dropdown-item">
+                                        <button
+                                            type="button"
+                                            className="dropdown-item"
+                                            onClick={() => navigate("/audit-stamping")}
+                                        >
+                                            <MdOutlineFingerprint className="ms-0 me-3" size={20} /> Audit Stamping
                                         </button>
                                     </li>
                                     <li className="dropdown-item">

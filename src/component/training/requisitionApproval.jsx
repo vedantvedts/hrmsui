@@ -70,6 +70,8 @@ const RequisitionApproval = () => {
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
         { name: "Requisition No", selector: (row) => row.requisitionNumber, sortable: true, align: 'text-left' },
+        { name: "Participant", selector: (row) => row.initiatingOfficer, sortable: true, align: 'text-left' },
+        { name: "Designation", selector: (row) => row.designation, sortable: true, align: 'text-center' },
         { name: "Course", selector: (row) => row.courseName, sortable: true, align: 'text-left' },
         { name: "Organizer", selector: (row) => row.organizer, sortable: true, align: 'text-left' },
         { name: "Duration (Day)", selector: (row) => row.duration, sortable: true, align: 'text-center' },
@@ -142,6 +144,8 @@ const RequisitionApproval = () => {
             forwardBy: item.forwardByName || "-",
             forwardDate: item.forwardDate ? format(new Date(item.forwardDate), "dd-MM-yyyy hh:mm a") : "-",
             approvedDate: item.approvedDate ? format(new Date(item.approvedDate), "dd-MM-yyyy hh:mm a") : "-",
+            initiatingOfficer: item.initiatingOfficerName || "-",
+            designation: item.empDesigName || "-",
             status:
                 <span
                     className="status-badge-modern"

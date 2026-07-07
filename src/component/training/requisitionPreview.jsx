@@ -121,7 +121,7 @@ const RequisitionPreview = ({ reqData, setShowModal }) => {
                                     <div className="col-md-12 view-field">
                                         <span className="view-label">Mode of Payment : {reqData.modeOfPayment}</span>
 
-                                        {reqData.modeOfPayment === "ECS" ? (
+                                        {reqData.modeOfPayment === "ECS" &&
                                             <div className="row g-2 mt-1">
                                                 <div className="col-md-3 file-item">
                                                     <span>ECS File</span>
@@ -151,7 +151,8 @@ const RequisitionPreview = ({ reqData, setShowModal }) => {
                                                     >{reqData?.fileBrochure || "-"}</div>
                                                 </div>
                                             </div>
-                                        ) : (
+                                        }
+                                        {reqData.modeOfPayment === "OTHERS" &&
                                             <div className="row g-2 mt-1">
                                                 <div className="col-md-8 file-item">
                                                     <span>Reason</span>
@@ -165,7 +166,7 @@ const RequisitionPreview = ({ reqData, setShowModal }) => {
                                                     >{reqData?.fileBrochure || "-"}</div>
                                                 </div>
                                             </div>
-                                        )}
+                                        }
                                     </div>
                                     <hr className="m-0 mt-3"></hr>
                                     <div className="col-md-12 view-field">

@@ -72,6 +72,7 @@ const DirectorApprovalList = () => {
                 <input
                     type="checkbox"
                     checked={selectedRows.some(row => row.requisitionId === item.requisitionId)}
+                    disabled={item.statusCode === "FC" || item.statusCode === "DA"}
                     onChange={(e) => handleCheckboxChange(item, e.target.checked)}
                 />
             ),

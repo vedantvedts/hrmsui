@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Datatable from "../../datatable/Datatable";
 import Navbar from "../navbar/Navbar";
 import { getRolesList, getUserManagerList } from "../../service/admin.service";
@@ -11,11 +11,11 @@ import Swal from "sweetalert2";
 import * as Yup from "yup";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
 import { usePermission } from "../../common/usePermission";
-
+import config from "../../environment/config";
 
 const UserManagerList = () => {
 
-    const { canView, canAdd, canEdit, canDelete } = usePermission("User Manager");
+    const { canView, canAdd, canEdit } = usePermission("User Manager");
 
     const [roleList, setRoleList] = useState([]);
     const [userManagerList, setUserManagerList] = useState([]);
@@ -24,15 +24,21 @@ const UserManagerList = () => {
     const [employeeList, setEmployeeList] = useState([]);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editData, setEditData] = useState(null);
+
+    // Tracked independently of Formik's schema validation so it
+    // can't be wiped out when unrelated fields (role, employee) change.
+    const [usernameExists, setUsernameExists] = useState(false);
+    const [checkingUsername, setCheckingUsername] = useState(false);
+
     const roleName = localStorage.getItem("roleName");
     const empId = localStorage.getItem("empId");
-
+    const LABCODE = config.LABCODE;
 
     const [initialValues, setInitialValues] = useState({
         loginId: "",
         username: "",
         empId: "",
-        roleId: "",
+        roleIds: [],
     });
 
     useEffect(() => {
@@ -43,20 +49,20 @@ const UserManagerList = () => {
 
     const fetchUserManagerList = async () => {
         try {
-            const userManagerList = await getUserManagerList();
-            setUserManagerList(userManagerList?.data || []);
-            setFilteredUserManagerList(userManagerList?.data || []);
+            const res = await getUserManagerList();
+            setUserManagerList(res?.data || []);
+            setFilteredUserManagerList(res?.data || []);
         } catch (error) {
-            console.error("Error occured in usermanager list");
+            console.error("Error occured in usermanager list", error);
         }
     };
 
     const fetchFormRoleList = async () => {
         try {
-            const roleList = await getRolesList();
-            setRoleList(roleList || []);
+            const res = await getRolesList();
+            setRoleList(res || []);
         } catch (error) {
-            console.error("Error occured in role list");
+            console.error("Error occured in role list", error);
         }
     };
 
@@ -76,9 +82,12 @@ const UserManagerList = () => {
                 loginId: editData.loginId || "",
                 username: editData.username || "",
                 empId: editData.empId || "",
-                roleId: editData.roleId || ""
+                roleIds: editData.roleIds || []
             });
         }
+        // reset duplicate-username tracking whenever the modal target changes
+        setUsernameExists(false);
+        setCheckingUsername(false);
     }, [editData]);
 
     const columns = [
@@ -93,57 +102,69 @@ const UserManagerList = () => {
     const mappedData = () => {
         return filteredUserManagerList.map((item, index) => ({
             sn: index + 1,
-            username: item.username || '-',
-            employee: item.employeeName + ', ' + item.designationName || '-',
-            rolename: item.roleName || '-',
-            division: item.divisionName || '-',
+            username: item.username || "-",
+            employee: item.employeeName
+                ? `${item.employeeName}${item.designationName ? `, ${item.designationName}` : ""}`
+                : "-",
+            rolename:
+                item.roleNames && item.roleNames.length > 0 ? (
+                    item.roleNames.map((role, idx) => <div key={idx}>{role}</div>)
+                ) : (
+                    "-"
+                ),
+            division: item.divisionName || "-",
             action: (
                 <>
-                    <Tooltip id="Tooltip" className='text-white' />
-                    {canEdit &&
+                    <Tooltip id="Tooltip" className="text-white" />
+                    {canEdit && (
                         <button
                             className="btn btn-sm btn-warning me-2"
-                            onClick={() => { handleEdit(item.loginId) }}
+                            onClick={() => handleEdit(item.loginId)}
                             data-tooltip-id="Tooltip"
                             data-tooltip-content="Edit User"
                             data-tooltip-place="top"
                         >
                             <FaEdit className="fs-6" />
                         </button>
-                    }
+                    )}
                 </>
             ),
-        }))
-    }
+        }));
+    };
 
-    const handleRoleTypeChange = (roleId) => {
-        const selectedRoleId = roleId;
+    const handleRoleTypeChange = (selectedRoleId) => {
         setRoleId(selectedRoleId);
-
-        // Filter the user manager list based on selected role ID
         const filteredList = selectedRoleId === 0
             ? userManagerList
-            : userManagerList.filter(data => data.roleId === selectedRoleId);
-
+            : userManagerList.filter(data => (data.roleIds || []).includes(selectedRoleId));
         setFilteredUserManagerList(filteredList);
     };
 
     const handleAdd = () => {
-        setShowEditModal(true);
+        setEditData(null);
         setInitialValues({
             loginId: "",
             username: "",
             empId: "",
-            roleId: ""
+            roleIds: []
         });
-        setEditData(null);
+        setUsernameExists(false);
+        setCheckingUsername(false);
+        setShowEditModal(true);
     };
 
-
     const handleEdit = async (loginId) => {
-        const response = await getUserById(loginId);
-        setEditData(response?.data);
-        setShowEditModal(true);
+        try {
+            const userData = await getUserById(loginId);
+            if (userData?.data) {
+                setEditData(userData.data);
+                setShowEditModal(true);
+            } else {
+                Swal.fire("Warning", "User data not found.", "warning");
+            }
+        } catch (error) {
+            Swal.fire("Warning", handleApiError(error), "warning");
+        }
     };
 
     const validationSchema = Yup.object({
@@ -155,15 +176,23 @@ const UserManagerList = () => {
         empId: Yup.string()
             .required("Employee is required"),
 
-        roleId: Yup.string()
+        roleIds: Yup.array()
+            .min(1, "At least one role is required")
             .required("Role is required"),
     });
 
     const closeEditModal = () => {
         setShowEditModal(false);
+        setEditData(null);
+        setUsernameExists(false);
+        setCheckingUsername(false);
     };
 
     const handleSubmit = async (values, { resetForm, setSubmitting }) => {
+        if (usernameExists) {
+            setSubmitting(false);
+            return;
+        }
         try {
             const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
             if (!confirm) {
@@ -187,24 +216,29 @@ const UserManagerList = () => {
         }
     };
 
-    const roleOptions = [
+    const roleOptions = useMemo(() => [
         { value: 0, label: "All" },
-        ...roleList.map((item) => ({
-            value: item.roleId,
-            label: item.roleName
-        }))
-    ];
+        ...roleList.map((item) => ({ value: item.roleId, label: item.roleName }))
+    ], [roleList]);
 
-    const roles = roleList.map(data => ({
+    const roles = useMemo(() => roleList.map(data => ({
         value: data?.roleId,
         label: data?.roleName
-    }));
+    })), [roleList]);
 
-    const employeeOptions = employeeList.map(data => ({
+    const employeeOptions = useMemo(() => employeeList.map(data => ({
         value: data?.empId,
         label: (data.empName + ", " + (data.empDesigName || "")).trim(),
-    }));
+    })), [employeeList]);
 
+    if (!canView) {
+        return (
+            <div>
+                <Navbar />
+                <div className="p-4 text-center text-muted">You do not have permission to view this page.</div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -226,10 +260,7 @@ const UserManagerList = () => {
                         <Select
                             options={roleOptions}
                             value={roleOptions.find((item) => item.value === Number(roleId)) || null}
-                            onChange={(selectedOption) => {
-                                const selectedValue = selectedOption ? selectedOption.value : 0; // default to 0
-                                handleRoleTypeChange(selectedValue);
-                            }}
+                            onChange={(selectedOption) => handleRoleTypeChange(selectedOption ? selectedOption.value : 0)}
                             placeholder="Select Role"
                             isSearchable
                         />
@@ -238,17 +269,15 @@ const UserManagerList = () => {
             </div>
 
             <div id="card-body" className="p-2 mt-2">
-                {<Datatable columns={columns} data={mappedData()} />}
+                <Datatable columns={columns} data={mappedData()} />
 
-                {/* <div>
-                    <button
-                        type="button"
-                        className="add mt-2"
-                        onClick={handleAdd}
-                    >
-                        Add New
-                    </button>
-                </div> */}
+                {LABCODE !== "CAIR" && canAdd && (
+                    <div>
+                        <button type="button" className="add mt-2" onClick={handleAdd}>
+                            Add New
+                        </button>
+                    </div>
+                )}
             </div>
 
             {showEditModal && (
@@ -258,7 +287,9 @@ const UserManagerList = () => {
                         <div className="modal-dialog modal-xl">
                             <div className="modal-content">
                                 <div className="modal-header custom-modal-header">
-                                    <h5 className="modal-title"><span className="cs-head-text">{editData != null ? "Update User" : "Add User"}</span></h5>
+                                    <h5 className="modal-title">
+                                        <span className="cs-head-text">{editData != null ? "Update User" : "Add User"}</span>
+                                    </h5>
                                     <button type="button" className="btn-close" onClick={closeEditModal}></button>
                                 </div>
                                 <div className="modal-body custom-modal-body">
@@ -268,7 +299,7 @@ const UserManagerList = () => {
                                         enableReinitialize
                                         onSubmit={handleSubmit}
                                     >
-                                        {({ values, setFieldValue, isSubmitting, isValid, errors, touched, setFieldTouched, setFieldError }) => (
+                                        {({ values, setFieldValue, isSubmitting, isValid, errors, touched }) => (
                                             <Form autoComplete="off">
                                                 <div className="row g-3">
 
@@ -280,27 +311,44 @@ const UserManagerList = () => {
                                                                     type="text"
                                                                     {...field}
                                                                     disabled={!!editData}
-                                                                    className={`form-control ${touched.username && errors.username ? "is-invalid" : ""}`}
+                                                                    className={`form-control ${(touched.username && errors.username) || usernameExists ? "is-invalid" : ""}`}
+                                                                    onChange={(e) => {
+                                                                        field.onChange(e);
+                                                                        // typing again means the last duplicate check is stale
+                                                                        if (usernameExists) setUsernameExists(false);
+                                                                    }}
                                                                     onBlur={async (e) => {
                                                                         field.onBlur(e);
                                                                         const value = e.target.value.trim();
-                                                                        if (value && value.length >= 4 && value !== editData?.username) {
-                                                                            try {
-                                                                                const res = await existsUsername(value);
-                                                                                if (res === true) {
-                                                                                    setFieldTouched("username", true, false);
-                                                                                    setFieldError("username", "User Name already exists");
-                                                                                }
-                                                                            } catch (err) {
-                                                                                setFieldTouched("username", true, false);
-                                                                                setFieldError("username", "Error checking username");
-                                                                            }
+
+                                                                        if (!value || value.length < 4 || value === editData?.username) {
+                                                                            setUsernameExists(false);
+                                                                            return;
+                                                                        }
+
+                                                                        try {
+                                                                            setCheckingUsername(true);
+                                                                            const res = await existsUsername(value);
+                                                                            setUsernameExists(res === true);
+                                                                        } catch (err) {
+                                                                            // fail safe: don't block submit on a failed check,
+                                                                            // but let the user know the check didn't run
+                                                                            setUsernameExists(false);
+                                                                            Swal.fire("Warning", "Could not verify username availability.", "warning");
+                                                                        } finally {
+                                                                            setCheckingUsername(false);
                                                                         }
                                                                     }}
                                                                 />
                                                             )}
                                                         </Field>
                                                         <ErrorMessage name="username" component="div" className="invalid-msg" />
+                                                        {!errors.username && usernameExists && (
+                                                            <div className="invalid-msg">User Name already exists</div>
+                                                        )}
+                                                        {checkingUsername && (
+                                                            <div className="text-muted small">Checking username...</div>
+                                                        )}
                                                     </div>
 
                                                     <div className="col-md-5">
@@ -308,9 +356,9 @@ const UserManagerList = () => {
                                                         <Select
                                                             className="cs-select"
                                                             options={employeeOptions}
-                                                            value={employeeOptions.find(o => o.value === values.empId)}
+                                                            value={employeeOptions.find(o => o.value === values.empId) || null}
                                                             onChange={o => setFieldValue("empId", o?.value || "")}
-                                                            isDisabled
+                                                            isDisabled={!!editData}
                                                         />
                                                         <ErrorMessage name="empId" component="div" className="invalid-msg" />
                                                     </div>
@@ -320,26 +368,26 @@ const UserManagerList = () => {
                                                         <Select
                                                             className="cs-select"
                                                             options={roles}
-                                                            value={roles.find(o => o.value === values.roleId)}
-                                                            onChange={o => setFieldValue("roleId", o?.value || "")}
+                                                            value={roles.filter(o => (values.roleIds || []).includes(o.value))}
+                                                            onChange={(selectedOptions) =>
+                                                                setFieldValue("roleIds", selectedOptions ? selectedOptions.map(o => o.value) : [])
+                                                            }
+                                                            isMulti
                                                         />
-                                                        <ErrorMessage name="roleId" component="div" className="invalid-msg" />
+                                                        <ErrorMessage name="roleIds" component="div" className="invalid-msg" />
                                                     </div>
 
                                                 </div>
 
                                                 <div className="text-center mt-4">
-                                                    <button type="submit"
+                                                    <button
+                                                        type="submit"
                                                         className={editData != null ? "update" : "submit"}
-                                                        disabled={isSubmitting || !isValid}
+                                                        disabled={isSubmitting || !isValid || usernameExists || checkingUsername}
                                                     >
                                                         {editData != null ? "Update" : "Submit"}
                                                     </button>
-                                                    <button
-                                                        type="button"
-                                                        className="back"
-                                                        onClick={closeEditModal}
-                                                    >
+                                                    <button type="button" className="back" onClick={closeEditModal}>
                                                         Cancel
                                                     </button>
                                                 </div>
