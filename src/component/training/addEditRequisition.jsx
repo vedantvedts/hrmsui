@@ -691,9 +691,6 @@ const AddEditRequisition = () => {
                                                         setFieldValue("multipartFileEcs", null);
                                                         setFieldValue("multipartFileCheque", null);
                                                         setFieldValue("multipartFilePan", null);
-                                                        // clear Others files
-                                                        setFieldValue("reason", "");
-                                                        setFieldValue("multipartFileBrochure", null);
                                                     }}
                                                 />
                                                 NA
@@ -908,7 +905,7 @@ const AddEditRequisition = () => {
                                     </div>
                                 )}
 
-                                {values.modeOfPayment === "OTHERS" && (
+                                {["OTHERS", "NA"].includes(values.modeOfPayment)  && (
                                     <div className="row custom-modal-body text-start p-3">
                                         <div className="col-md-8">
                                             <label className="form-label">Reason</label>
