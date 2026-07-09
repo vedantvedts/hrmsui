@@ -16,8 +16,9 @@ export const login = async (username, password) => {
 
     const loginData = {
       username: username.trim(),
+      // password: ['CAIR', 'VEDTS'].includes(LABCODE) ? password : encryptedPassword,
       password: LABCODE === 'CAIR' ? password : encryptedPassword,
-      timestamp: timestamp
+      // timestamp: timestamp
     };
 
     const response = await authenticationDetails(loginData);
@@ -30,8 +31,12 @@ export const login = async (username, password) => {
           username
         })
       );
+
+      localStorage.setItem('roles', JSON.stringify(response.data.data.roles || []))
+
       const emp = await getUserDetails(username);
 
+      localStorage.setItem('username', username);
       localStorage.setItem('loginId', emp?.data.loginId);
       localStorage.setItem('empId', emp?.data.empId);
       localStorage.setItem('empName', emp?.data.empName);

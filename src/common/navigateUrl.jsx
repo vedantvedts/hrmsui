@@ -38,6 +38,7 @@ import MandatoryTrainingAddEdit from "../component/training/mandatoryTrainingAdd
 import LicenseExp from "../component/license/licenseExp.component.jsx";
 import ChangePassword from "../component/admin/changePassword.jsx";
 import HandingOverList from "../component/admin/handingOverList.jsx";
+import CashLimit from "../component/admin/cashLimit.jsx";
 
 
 function AppRoutes() {
@@ -139,6 +140,7 @@ function AppRoutes() {
         <Route path="/users" element={<UserManagerList />} />
         <Route path="/roleaccess" element={<FormRoleAccess />} />
         <Route path="/calendar" element={<Calendar />} />
+         <Route path="/cash-limit" element={<CashLimit />}/>
         <Route path="/requisition" element={<Requisition />} />
         <Route path="/feedback-add" element={<Feedback />} />
         <Route path="/feedback" element={<FeedbackList />} />

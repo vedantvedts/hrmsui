@@ -21,6 +21,17 @@ const AlertConfirmation = async ({ title, message }) => {
   return result.isConfirmed;
 };
 
-
+export const showAlert = (title, text, icon = "info", confirmButton) => {
+  Swal.fire({
+    title,
+    text,
+    icon,
+    confirmButtonText: "OK",
+    // timer: 3000,
+    customClass: {
+      confirmButton: confirmButton,
+    },
+  });
+};
 
 export default AlertConfirmation;

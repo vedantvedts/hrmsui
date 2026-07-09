@@ -678,6 +678,24 @@ const AddEditRequisition = () => {
                                                 />
                                                 Others
                                             </label>
+
+                                        <label>
+                                                <Field
+                                                    type="radio"
+                                                    name="modeOfPayment"
+                                                    value="NA"
+                                                    className="form-check-input me-1"
+                                                    onChange={(e) => {
+                                                        setFieldValue("modeOfPayment", "NA");
+                                                        // clear ECS files
+                                                        setFieldValue("multipartFileEcs", null);
+                                                        setFieldValue("multipartFileCheque", null);
+                                                        setFieldValue("multipartFilePan", null);
+                                                    }}
+                                                />
+                                                NA
+                                            </label>
+
                                         </div>
 
                                         <ErrorMessage name="modeOfPayment" component="div" className="invalid-msg" />
@@ -887,7 +905,7 @@ const AddEditRequisition = () => {
                                     </div>
                                 )}
 
-                                {values.modeOfPayment === "OTHERS" && (
+                                {["OTHERS", "NA"].includes(values.modeOfPayment)  && (
                                     <div className="row custom-modal-body text-start p-3">
                                         <div className="col-md-8">
                                             <label className="form-label">Reason</label>
