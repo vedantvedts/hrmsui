@@ -86,7 +86,7 @@ const Requisition = () => {
 
     const fetchEmployees = async () => {
         try {
-            const roleToPass = ["ROLE_ADMIN", "ROLE_DH"].includes(roleName) ? roleName : "ROLE_ADMIN";
+            const roleToPass = ["ROLE_ADMIN", "ROLE_DH", "ROLE_GH"].includes(roleName) ? roleName : "ROLE_ADMIN";
             const response = await getEmployees(empId, roleToPass);
             const res = response?.data || [];
 

@@ -60,7 +60,7 @@ const Dashboard = () => {
     useEffect(() => {
         if (!financialYear) return;
 
-        if (["ROLE_ADMIN", "ROLE_AD_HRT", "ROLE_SA_HRT", "ROLE_DH", "ROLE_DIRECTOR"].includes(roleName)) {
+        if (["ROLE_ADMIN", "ROLE_AD_HRT", "ROLE_SA_HRT", "ROLE_DH", "ROLE_GH", "ROLE_DIRECTOR"].includes(roleName)) {
             fetchAdminDashboards();
         } else {
             fetchReqUserDashboard();
@@ -88,7 +88,7 @@ const Dashboard = () => {
         try {
             const [dashRes, reqRes, feedRes] = await Promise.all([
                 getRequisitionUserDashboardCount(employeeId, startDate, endDate),
-                getRequisitions(employeeId, roleName),
+                getRequisitions(employeeId, roleName, startDate, endDate, 0),
                 getFeedbackList(employeeId, roleName)
             ]);
             setRequisitionUserData(dashRes || []);
@@ -114,7 +114,7 @@ const Dashboard = () => {
     };
 
     const { totalFeedbackCount, reqPendingCount } = useMemo(() => {
-        const isAdminRole = ["ROLE_ADMIN", "ROLE_AD_HRT", "ROLE_SA_HRT", "ROLE_DH", "ROLE_DIRECTOR"].includes(roleName);
+        const isAdminRole = ["ROLE_ADMIN", "ROLE_AD_HRT", "ROLE_SA_HRT", "ROLE_DH", "ROLE_GH", "ROLE_DIRECTOR"].includes(roleName);
 
         // Create Set with String IDs to avoid type mismatch bugs
         const feedbackIdSet = new Set(feedbackList?.map(item => String(item.requisitionId)) || []);
@@ -129,7 +129,7 @@ const Dashboard = () => {
             feedbackCount = feedbackList.filter(feed => feed.isAccepted === "N").length;
         } else {
             feedbackCount = requisitionUser.filter(req =>
-                req.status === "AV" && !feedbackIdSet.has(String(req.requisitionId))
+                ["CO", "FA"].includes(req.status) && !feedbackIdSet.has(String(req.requisitionId))
             ).length;
         }
 

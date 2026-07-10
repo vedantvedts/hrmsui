@@ -40,7 +40,7 @@ const Navbar = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     const encryptedUser = btoa(user.username);
 
-    const currentRoleName = roleName.split("_")[1];
+    const currentRoleName = roleName.split("_").slice(1).join("-");
     const [selectedRole, setSelectedRole] = useState(null);
 
     const [appUrls, setAppUrls] = useState({});
