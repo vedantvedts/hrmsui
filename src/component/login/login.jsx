@@ -111,7 +111,7 @@ const Login = () => {
 
                     <div className="brand-center">
                         <h1>HRMS</h1>
-                        <p>Human Resource Management System</p>
+                        <p>Human Resource Management System (Ver 1.0)</p>
                     </div>
 
                     <div className="clock-pill">{time}</div>

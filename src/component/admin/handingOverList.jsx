@@ -84,7 +84,7 @@ const HandingOverList = () => {
     const columns = [
         { name: "SN", selector: (row) => row.sn, sortable: true, align: "text-center" },
         { name: "Handing Over Employee", selector: (row) => row.fromEmpName, sortable: true, align: "text-left" },
-        { name: "Hainding OverTo ", selector: (row) => row.toEmpName, sortable: true, align: "text-left" },
+        { name: "Handing OverTo ", selector: (row) => row.toEmpName, sortable: true, align: "text-left" },
         { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: "text-center" },
         { name: "To Date", selector: (row) => row.toDate, sortable: true, align: "text-center" },
         { name: "Created Date", selector: (row) => row.createdDate, sortable: true, align: "text-center" },

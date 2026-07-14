@@ -786,3 +786,12 @@ export const addReqAttendance = async (data) => {
         throw error;
     }
 };
+
+export const getLabMasterData = async (data) => {
+    try {
+        return (await axios.get(`${API_URL}api/training/lab-master`, { headers: { 'Content-Type': 'application/json', ...authHeader() } })).data;
+    } catch (error) {
+        console.error('Error occurred in getLabMasterData():', error);
+        throw error;
+    }
+};

@@ -6,7 +6,7 @@ import { getEmployees, handleApiError } from "../../service/master.service";
 import Select from "react-select";
 import Swal from "sweetalert2";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
-import { addEvaluation, getEvaluationList, getEvaluationPrint, getRequisitions } from "../../service/training.service";
+import { addEvaluation, getEvaluationList, getEvaluationPrint, getLabMasterData, getRequisitions } from "../../service/training.service";
 import { format } from "date-fns";
 import "./Training.css";
 import { FaArrowRight } from "react-icons/fa";
@@ -55,12 +55,12 @@ const Evaluation = () => {
 
     useEffect(() => {
         fetchEmployees();
-        fetchRequisitions();
     }, []);
 
     useEffect(() => {
         if (fromDate && toDate) {
             fetchEvaluations(fromDate, toDate);
+            fetchRequisitions(fromDate, toDate);
         }
     }, [fromDate, toDate]);
 
@@ -77,9 +77,12 @@ const Evaluation = () => {
         }
     };
 
-    const fetchRequisitions = async () => {
+    const fetchRequisitions = async (from, to) => {
         try {
-            const response = await getRequisitions(empId, roleName);
+            if (!from || !to) return;
+            const formatFromDate = format(from, "yyyy-MM-dd");
+            const formatToDate = format(to, "yyyy-MM-dd");
+            const response = await getRequisitions(empId, roleName, formatFromDate, formatToDate, 0);
             setRequisitionList(response?.data || []);
         } catch (error) {
             console.error("Error fetching requisitions:", error);
@@ -141,7 +144,7 @@ const Evaluation = () => {
     };
 
     const formatName = () => {
-        const cleanTitle = (title && title !== "null") ? title : (salutation && salutation !== "null") ? salutation : "";
+        const cleanTitle = (salutation && salutation !== "null") ? salutation : (title && title !== "null") ? title : "";
         const cleanName = (empName && empName !== "null") ? empName : "";
         const cleanDesignation = (designationCode && designationCode !== "null") ? `, ${designationCode}` : "";
 
@@ -263,8 +266,15 @@ const Evaluation = () => {
                 );
                 return;
             }
+
+            const labResponse = await getLabMasterData();
+            if (!labResponse?.data) {
+                Swal.fire("Warning", "Lab details not found.", "warning");
+                return;
+            }
+
             const empName = formatName();
-            await EvaluationPrint(response.data, empName);
+            await EvaluationPrint(response.data, empName, labResponse.data);
 
         } catch (error) {
             console.error("Print Error:", error);
@@ -309,7 +319,7 @@ const Evaluation = () => {
             // Add 3 months
             const allowedDate = new Date(toDate);
             allowedDate.setMonth(allowedDate.getMonth() + 3);
-            
+
             // Check if current date is before allowed date
             if (new Date() < allowedDate) {
                 Swal.fire("Info", "You can only add impact after 3 months of training completion.", "info");
