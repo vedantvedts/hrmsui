@@ -4,7 +4,7 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 
 pdfMake.vfs = pdfFonts.vfs;
 
-export const FeedbackPrint = (reqData) => {
+export const FeedbackPrint = (reqData, labData) => {
 
     // ✅ Safe date formatter
     const formatDate = (date) => {
@@ -95,16 +95,29 @@ export const FeedbackPrint = (reqData) => {
                         [
                             { text: "", border: [true, true, true, false] },
                             {
-                                text: "Centre for Artificial Intelligence and Robotics (CAIR), Bangalore - 560093",
-                                fontSize: 11,
-                                alignment: "center",
-                                margin: [0, 5, 0, 5],
-                                colSpan: 3
-                            }, {}, {},
+                                stack: [
+                                    {
+                                        text: `${labData?.labName} (${labData?.labCode})`,
+                                        fontSize: 12,
+                                        bold: true,
+                                        alignment: "center"
+                                    },
+                                    {
+                                        text: `${labData?.labAddress}, ${labData?.labPin}`,
+                                        fontSize: 8,
+                                        alignment: "center",
+                                        margin: [0, 2, 0, 0]
+                                    }
+                                ],
+                                colSpan: 3,
+                                margin: [0, 5, 0, 5]
+                            },
+                            {},
+                            {},
                             { text: "", border: [true, true, true, false] }
                         ],
                         [
-                            { text: "CAIR", alignment: "center", bold: true, rowSpan: 3, border: [true, false, true, true] },
+                            { text: `${labData?.labCode}`, alignment: "center", bold: true, rowSpan: 3, border: [true, false, true, true] },
                             { text: "TRAINING FEEDBACK", alignment: "center", bold: true, margin: [0, 15, 0, 0], rowSpan: 3 },
                             { text: "Format No", fontSize: 8, alignment: "center" },
                             { text: "QSP060:FM02", fontSize: 7, alignment: 'center' },

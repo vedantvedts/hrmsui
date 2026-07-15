@@ -4,20 +4,7 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 
 pdfMake.vfs = pdfFonts.vfs;
 
-export const EvaluationPrint = (evData, empName) => {
-
-    const impactOptions = [
-        { value: "E", label: "Excellent" },
-        { value: "VG", label: "Very Good" },
-        { value: "G", label: "Good" },
-        { value: "M", label: "Margin" },
-        { value: "N", label: "Nil" },
-    ];
-
-    const getImpactLabel = (value) => {
-        const match = impactOptions.find(opt => opt.value === value);
-        return match ? match.label : "";
-    };
+export const EvaluationPrint = (evData, empName, labData) => {
 
     const docDefinition = {
         pageSize: "A4",
@@ -32,16 +19,29 @@ export const EvaluationPrint = (evData, empName) => {
                         [
                             { text: "", border: [true, true, true, false] },
                             {
-                                text: "Centre for Artificial Intelligence and Robotics (CAIR), Bangalore - 560093",
-                                fontSize: 11,
-                                alignment: "center",
-                                margin: [0, 5, 0, 5],
-                                colSpan: 3
-                            }, {}, {},
+                                stack: [
+                                    {
+                                        text: `${labData?.labName} (${labData?.labCode})`,
+                                        fontSize: 12,
+                                        bold: true,
+                                        alignment: "center"
+                                    },
+                                    {
+                                        text: `${labData?.labAddress}, ${labData?.labPin}`,
+                                        fontSize: 8,
+                                        alignment: "center",
+                                        margin: [0, 2, 0, 0]
+                                    }
+                                ],
+                                colSpan: 3,
+                                margin: [0, 5, 0, 5]
+                            },
+                            {},
+                            {},
                             { text: "", border: [true, true, true, false] }
                         ],
                         [
-                            { text: "CAIR", alignment: "center", bold: true, rowSpan: 3, border: [true, false, true, true] },
+                            { text: `${labData?.labCode}`, alignment: "center", bold: true, rowSpan: 3, border: [true, false, true, true] },
                             { text: "REPORT OF EVALUATION OF EFFECTIVENESS OF TRAINING", alignment: "center", bold: true, margin: [0, 10, 0, 0], rowSpan: 3 },
                             { text: "Format No", fontSize: 8, alignment: "center" },
                             { text: "QSP060:FM02", fontSize: 7, alignment: 'center' },
@@ -80,7 +80,7 @@ export const EvaluationPrint = (evData, empName) => {
                 text: [
                     { text: "1. Name of the Employee with Designation : ", bold: true },
                     {
-                        text: evData.title + " " + evData.empName + ", " + evData.designation,
+                        text: evData.empName,
                         color: "#0067ee",
                     }
                 ],
@@ -94,7 +94,8 @@ export const EvaluationPrint = (evData, empName) => {
             {
                 text: "E : Excellent, VG : Very Good, G : Good, M : Margin, N : Nil",
                 margin: [0, 10, 0, 0],
-                fontSize: 9,
+                fontSize: 10,
+                bold: true,
                 color: "#8f3105",
             },
             {
@@ -118,9 +119,9 @@ export const EvaluationPrint = (evData, empName) => {
                         ],
                         ...(evData?.evaluation || []).map(ev => ([
                             ev.courseName || "",
-                            format(new Date(ev.fromDate), "dd-MM-yyyy"),
-                            format(new Date(ev.toDate), "dd-MM-yyyy"),
-                            getImpactLabel(ev.impact)
+                            { text: format(new Date(ev.fromDate), "dd-MM-yyyy"), alignment: "center" },
+                            { text: format(new Date(ev.toDate), "dd-MM-yyyy"), alignment: "center" },
+                            { text: ev.impact || "NA", alignment: "center" },
                         ]))
                     ]
                 }

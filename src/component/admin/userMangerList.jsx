@@ -51,7 +51,6 @@ const UserManagerList = () => {
         try {
             const res = await getUserManagerList();
             setUserManagerList(res?.data || []);
-            setFilteredUserManagerList(res?.data || []);
         } catch (error) {
             console.error("Error occured in usermanager list", error);
         }
@@ -134,11 +133,14 @@ const UserManagerList = () => {
 
     const handleRoleTypeChange = (selectedRoleId) => {
         setRoleId(selectedRoleId);
-        const filteredList = selectedRoleId === 0
-            ? userManagerList
-            : userManagerList.filter(data => (data.roleIds || []).includes(selectedRoleId));
-        setFilteredUserManagerList(filteredList);
     };
+
+    useEffect(() => {
+        const filteredList = roleId === 0
+            ? userManagerList
+            : userManagerList.filter(data => (data.roleIds || []).includes(roleId));
+        setFilteredUserManagerList(filteredList);
+    }, [roleId, userManagerList]);
 
     const handleAdd = () => {
         setEditData(null);
@@ -202,10 +204,19 @@ const UserManagerList = () => {
             const response = editData != null ? await updateUser(values) : await addUser(values);
 
             if (response.success) {
-                Swal.fire("Success", response.message, "success");
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: response.message,
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
                 closeEditModal();
                 fetchUserManagerList();
                 resetForm();
+                setUsernameExists(false);
+                setCheckingUsername(false);
+                setSubmitting(false);
             } else {
                 Swal.fire("Warning", response.message, "warning");
             }

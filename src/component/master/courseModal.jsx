@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { addEligible, addProgram, editProgram, getAgencies, getCourseTypeList, getEligibilities } from "../../service/training.service";
+import { addEligible, addOrganizer, addProgram, editProgram, getAgencies, getCourseTypeList, getEligibilities } from "../../service/training.service";
 import Swal from "sweetalert2";
 import { format } from "date-fns";
 import { ErrorMessage, Field, Form, Formik } from "formik";
@@ -11,7 +11,7 @@ import { handleApiError } from "../../service/master.service";
 
 
 const CourseModal = ({ showProgramModal, setShowProgramModal, editData, setEditData,
-                       selectedOrgId, fetchCourseData, setCourseData, fetchPrograms }) => {
+    selectedOrgId, fetchCourseData, setCourseData, fetchPrograms }) => {
 
 
     const [filterOrganizeList, setFilterOrganizeList] = useState([]);
@@ -19,9 +19,21 @@ const CourseModal = ({ showProgramModal, setShowProgramModal, editData, setEditD
     const [agencyList, setAgencyList] = useState([]);
     const formikRef = useRef(null);
     const [showAddEligibility, setShowAddEligibility] = useState(false);
+    const [showAddOrganizer, setShowAddOrganizer] = useState(false);
     const [eligibilityInput, setEligibilityInput] = useState("");
     const [eligibilityError, setEligibilityError] = useState("");
     const [courseTypeList, setCourseTypeList] = useState([]);
+
+    // ---- Organizer "Add New" inline form state ----
+    const initialOrganizerForm = {
+        organizer: "",
+        contactName: "",
+        phoneNo: "",
+        faxNo: "",
+        email: ""
+    };
+    const [organizerForm, setOrganizerForm] = useState(initialOrganizerForm);
+    const [organizerErrors, setOrganizerErrors] = useState({});
 
     const programFeilds = {
         courseCode: "",
@@ -177,6 +189,9 @@ const CourseModal = ({ showProgramModal, setShowProgramModal, editData, setEditD
         setShowAddEligibility(false);
         setEligibilityInput("");
         setEligibilityError("");
+        setShowAddOrganizer(false);
+        setOrganizerForm(initialOrganizerForm);
+        setOrganizerErrors({});
     }
 
     const handleChangeEligibility = (selected) => {
@@ -229,6 +244,109 @@ const CourseModal = ({ showProgramModal, setShowProgramModal, editData, setEditD
         }
     };
 
+    // ---- Organizer "Add New" inline form helpers ----
+
+    const handleOrganizerFieldChange = (field, value) => {
+        setOrganizerForm((prev) => ({ ...prev, [field]: value }));
+        if (organizerErrors[field]) {
+            setOrganizerErrors((prev) => ({ ...prev, [field]: "" }));
+        }
+    };
+
+    const validateOrganizerForm = () => {
+        const errors = {};
+        const { organizer, contactName, phoneNo, faxNo, email } = organizerForm;
+
+        if (!organizer.trim()) {
+            errors.organizer = "Organizer Name is required";
+        } else if (organizer.trim().length > 100) {
+            errors.organizer = "Organizer Name cannot exceed 100 characters";
+        }
+
+        if (!contactName.trim()) {
+            errors.contactName = "Contact Name is required";
+        } else if (contactName.trim().length > 100) {
+            errors.contactName = "Contact Name cannot exceed 100 characters";
+        }
+
+        if (!phoneNo.trim()) {
+            errors.phoneNo = "Phone Number is required";
+        } else if (!/^[0-9]{10}$/.test(phoneNo.trim())) {
+            errors.phoneNo = "Enter a valid 10-digit phone number";
+        }
+
+        if (!faxNo.trim()) {
+            errors.faxNo = "Fax Number is required";
+        } else if (!/^[0-9]{5,15}$/.test(faxNo.trim())) {
+            errors.faxNo = "Enter a valid fax number (5-15 digits)";
+        }
+
+        if (!email.trim()) {
+            errors.email = "Email is required";
+        } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.trim())) {
+                errors.email = "Enter a valid email address";
+            } else if (email.trim().length > 100) {
+                errors.email = "Email cannot exceed 100 characters";
+            }
+        }
+
+        setOrganizerErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const resetOrganizerForm = () => {
+        setShowAddOrganizer(false);
+        setOrganizerForm(initialOrganizerForm);
+        setOrganizerErrors({});
+    };
+
+    const handleOrganizerSubmit = async () => {
+        if (!validateOrganizerForm()) return;
+        try {
+            const confirm = await AlertConfirmation({ title: "Are you sure to submit!", message: '' });
+            if (!confirm) return;
+
+            const dto = {
+                organizer: organizerForm.organizer.trim(),
+                contactName: organizerForm.contactName.trim(),
+                phoneNo: organizerForm.phoneNo.trim(),
+                faxNo: organizerForm.faxNo.trim(),
+                email: organizerForm.email.trim()
+            };
+
+            const response = await addOrganizer(dto);
+            if (response && response.success) {
+                const newItem = response.data;
+                fetchAgencies();
+                formikRef.current.setFieldValue("organizerId", newItem.organizerId);
+                resetOrganizerForm();
+            } else {
+                Swal.fire("Warning", response.message, "warning");
+            }
+        } catch (error) {
+            Swal.fire("Warning", handleApiError(error), "warning");
+        }
+    };
+
+    const handleChangeOrganizer = (selected) => {
+        const { setFieldValue } = formikRef.current;
+
+        if (!selected) return;
+
+        if (selected.value === 0) {
+            setShowAddOrganizer(true);
+            setOrganizerForm(initialOrganizerForm);
+            setOrganizerErrors({});
+            setFieldValue("organizerId", null);
+            return;
+        }
+
+        setShowAddOrganizer(false);
+        setFieldValue("organizerId", selected.value);
+    };
+
     const eligibilityOptions = [
         { value: 0, label: "Add New" },
         ...eligibilityList.map((item) => ({
@@ -247,10 +365,13 @@ const CourseModal = ({ showProgramModal, setShowProgramModal, editData, setEditD
         { value: "International", label: "International" },
     ];
 
-    const agencyOptions = agencyList.map(data => ({
-        value: data?.organizerId,
-        label: data?.organizer
-    }));
+    const agencyOptions = [
+        { value: 0, label: "Add New" },
+        ...agencyList.map((item) => ({
+            value: item.organizerId,
+            label: item.organizer
+        }))
+    ];
 
     return (
         <div>
@@ -334,13 +455,148 @@ const CourseModal = ({ showProgramModal, setShowProgramModal, editData, setEditD
                                                         </label>
                                                         <Select
                                                             options={agencyOptions}
-                                                            value={agencyOptions.find((item) => item.value === Number(values.organizerId)) || null}
-                                                            onChange={(option) => setFieldValue("organizerId", option ? option.value : "")}
+                                                            value={
+                                                                values.organizerId
+                                                                    ? agencyOptions.find((item) => item.value === Number(values.organizerId))
+                                                                    : null
+                                                            }
+                                                            onChange={(selected) => handleChangeOrganizer(selected)}
                                                             placeholder="Select Organizer"
                                                             isSearchable
                                                         />
                                                         <ErrorMessage name="organizerId" component="div" className="invalid-msg" />
                                                     </div>
+
+                                                    {showAddOrganizer && (
+                                                        <div className="col-md-12 mb-3">
+                                                            <div className="p-3 cs-bg-blue">
+
+                                                                <label className="form-label mb-3 d-block text-center text-danger text-decoration-underline">
+                                                                    Add New Organizer
+                                                                </label>
+
+                                                                <div className="row">
+                                                                    <div className="col-md-6 mb-3">
+                                                                        <label className="form-label">
+                                                                            Organizer Name <span className="text-danger">*</span>
+                                                                        </label>
+                                                                        <input
+                                                                            type="text"
+                                                                            className="form-control"
+                                                                            placeholder="Enter Organizer Name"
+                                                                            value={organizerForm.organizer}
+                                                                            onChange={(e) =>
+                                                                                handleOrganizerFieldChange("organizer", e.target.value)
+                                                                            }
+                                                                        />
+                                                                        {organizerErrors.organizer && (
+                                                                            <div className="invalid-msg">{organizerErrors.organizer}</div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <div className="col-md-6 mb-3">
+                                                                        <label className="form-label">
+                                                                            Contact Name <span className="text-danger">*</span>
+                                                                        </label>
+                                                                        <input
+                                                                            type="text"
+                                                                            className="form-control"
+                                                                            placeholder="Enter Contact Name"
+                                                                            value={organizerForm.contactName}
+                                                                            onChange={(e) =>
+                                                                                handleOrganizerFieldChange("contactName", e.target.value)
+                                                                            }
+                                                                        />
+                                                                        {organizerErrors.contactName && (
+                                                                            <div className="invalid-msg">{organizerErrors.contactName}</div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <div className="col-md-4 mb-3">
+                                                                        <label className="form-label">
+                                                                            Phone No <span className="text-danger">*</span>
+                                                                        </label>
+                                                                        <input
+                                                                            type="text"
+                                                                            className="form-control"
+                                                                            placeholder="Enter Phone Number"
+                                                                            maxLength={10}
+                                                                            value={organizerForm.phoneNo}
+                                                                            onChange={(e) =>
+                                                                                handleOrganizerFieldChange(
+                                                                                    "phoneNo",
+                                                                                    e.target.value.replace(/[^0-9]/g, "")
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                        {organizerErrors.phoneNo && (
+                                                                            <div className="invalid-msg">{organizerErrors.phoneNo}</div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <div className="col-md-4 mb-3">
+                                                                        <label className="form-label">
+                                                                            Fax No <span className="text-danger">*</span>
+                                                                        </label>
+                                                                        <input
+                                                                            type="text"
+                                                                            className="form-control"
+                                                                            placeholder="Enter Fax Number"
+                                                                            maxLength={15}
+                                                                            value={organizerForm.faxNo}
+                                                                            onChange={(e) =>
+                                                                                handleOrganizerFieldChange(
+                                                                                    "faxNo",
+                                                                                    e.target.value.replace(/[^0-9]/g, "")
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                        {organizerErrors.faxNo && (
+                                                                            <div className="invalid-msg">{organizerErrors.faxNo}</div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    <div className="col-md-4 mb-3">
+                                                                        <label className="form-label">
+                                                                            Email <span className="text-danger">*</span>
+                                                                        </label>
+                                                                        <input
+                                                                            type="email"
+                                                                            className="form-control"
+                                                                            placeholder="Enter Email"
+                                                                            value={organizerForm.email}
+                                                                            onChange={(e) =>
+                                                                                handleOrganizerFieldChange("email", e.target.value)
+                                                                            }
+                                                                        />
+                                                                        {organizerErrors.email && (
+                                                                            <div className="invalid-msg">{organizerErrors.email}</div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="mt-2 d-flex gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-sm btn-success"
+                                                                        onClick={handleOrganizerSubmit}
+                                                                    >
+                                                                        SAVE
+                                                                    </button>
+
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-sm btn-secondary"
+                                                                        onClick={resetOrganizerForm}
+                                                                    >
+                                                                        CANCEL
+                                                                    </button>
+                                                                </div>
+
+                                                            </div>
+                                                        </div>
+                                                    )}
+
 
                                                     <div className="col-md-4 mb-3">
                                                         <label className="form-label">Eligibility
@@ -402,7 +658,7 @@ const CourseModal = ({ showProgramModal, setShowProgramModal, editData, setEditD
 
                                                     {showAddEligibility && (
                                                         <div className="col-md-12 mb-3">
-                                                            <div className="border rounded p-3 bg-light">
+                                                            <div className="p-3 cs-bg-blue">
 
                                                                 <label className="form-label">
                                                                     Add New Eligibility <span className="text-danger">*</span>

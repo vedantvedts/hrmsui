@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Datatable from "../../datatable/Datatable";
 import Navbar from "../navbar/Navbar";
 import { useLocation, useNavigate } from "react-router-dom";
-import { addReqAttendance, addReqConfirmation, forwardRequisition, getFeedbackList, getRequisitionPrint, getRequisitions, revokeRequisition } from "../../service/training.service";
+import { addReqAttendance, addReqConfirmation, forwardRequisition, getFeedbackList, getLabMasterData, getRequisitionPrint, getRequisitions, revokeRequisition } from "../../service/training.service";
 import Swal from "sweetalert2";
 import { format, startOfYear } from "date-fns";
 import { Tooltip } from "react-tooltip";
@@ -86,7 +86,7 @@ const Requisition = () => {
 
     const fetchEmployees = async () => {
         try {
-            const roleToPass = ["ROLE_ADMIN", "ROLE_DH"].includes(roleName) ? roleName : "ROLE_ADMIN";
+            const roleToPass = ["ROLE_ADMIN", "ROLE_DH", "ROLE_GH"].includes(roleName) ? roleName : "ROLE_ADMIN";
             const response = await getEmployees(empId, roleToPass);
             const res = response?.data || [];
 
@@ -459,8 +459,36 @@ const Requisition = () => {
     }
 
     const handlePrint = async (item) => {
-        const response = await getRequisitionPrint(item.requisitionId);
-        await RequisitionPrint(response?.data);
+        try {
+            if (!item?.requisitionId) {
+                Swal.fire("Warning", "Invalid requisition selected.", "warning");
+                return;
+            }
+
+            const response = await getRequisitionPrint(item.requisitionId);
+
+            if (!response?.data) {
+                Swal.fire("Warning", "Requisition data not found.", "warning");
+                return;
+            }
+
+            const labResponse = await getLabMasterData();
+
+            if (!labResponse?.data) {
+                Swal.fire("Warning", "Lab details not found.", "warning");
+                return;
+            }
+
+            await RequisitionPrint(response.data, labResponse.data);
+        } catch (error) {
+            console.error("Print Error:", error);
+
+            Swal.fire(
+                "Warning",
+                error?.response?.data?.message || "Something went wrong while generating the print.",
+                "warning"
+            );
+        }
     };
 
     const handleForward = async (item) => {

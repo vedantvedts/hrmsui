@@ -258,7 +258,7 @@ const CashLimit = () => {
 
     };
 
-    const handleSubmit = async ( values, { resetForm, setSubmitting }) => {
+    const handleSubmit = async (values, { resetForm, setSubmitting }) => {
         try {
             const confirm = await AlertConfirmation({
                 title: "Are you sure to submit?",
@@ -293,11 +293,13 @@ const CashLimit = () => {
             }
 
             if (response.success) {
-                Swal.fire(
-                    "Success",
-                    response.message,
-                    "success"
-                );
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: response.message,
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
                 closeEditModal();
                 fetchCashLimitList();
                 resetForm();

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Datatable from "../../datatable/Datatable";
 import Navbar from "../navbar/Navbar";
 import { useNavigate } from "react-router-dom";
-import { acceptReqFeedback, feedbackFileDownload, getFeedbackList, getFeedbackPrint } from "../../service/training.service";
+import { acceptReqFeedback, feedbackFileDownload, getFeedbackList, getFeedbackPrint, getLabMasterData } from "../../service/training.service";
 import Swal from "sweetalert2";
 import { format } from "date-fns";
 import { Tooltip } from "react-tooltip";
@@ -202,7 +202,14 @@ const FeedbackList = () => {
                 return;
             }
 
-            await FeedbackPrint(response.data);
+            const labResponse = await getLabMasterData();
+
+            if (!labResponse?.data) {
+                Swal.fire("Warning", "Lab details not found.", "warning");
+                return;
+            }
+
+            await FeedbackPrint(response.data, labResponse.data);
 
         } catch (error) {
             console.error("Print Error:", error);
