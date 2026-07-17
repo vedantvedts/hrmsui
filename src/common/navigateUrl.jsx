@@ -39,6 +39,7 @@ import LicenseExp from "../component/license/licenseExp.component.jsx";
 import ChangePassword from "../component/admin/changePassword.jsx";
 import HandingOverList from "../component/admin/handingOverList.jsx";
 import CashLimit from "../component/admin/cashLimit.jsx";
+import SAHRTApprovalList from "../component/approval/saHrtApprovalLIst.jsx";
 
 
 function AppRoutes() {
@@ -166,6 +167,7 @@ function AppRoutes() {
         <Route path='/license-exp' element={<LicenseExp />} />
         <Route path="/password-change" element={<ChangePassword />} />
         <Route path="/handing-over" element={<HandingOverList />} />
+        <Route path="/req-sa-approval" element={<SAHRTApprovalList />} />
       </Routes>
 
     </>

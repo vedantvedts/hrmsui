@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import Datatable from "../../datatable/Datatable";
-import { forwardToDirector, getReqApprovedList } from "../../service/training.service";
+import { forwardToDirector, getLabMasterData, getReqApprovedList, getRequisitionPrint } from "../../service/training.service";
 import RequisitionPreview from "../training/requisitionPreview";
 import { format, startOfYear } from "date-fns";
 import Swal from "sweetalert2";
 import AlertConfirmation from "../../common/AlertConfirmation.component";
 import DatePicker from "react-datepicker";
+import Navbar from "../navbar/Navbar";
+import { Tooltip } from "react-tooltip";
+import { FaEye } from "react-icons/fa6";
+import RequisitionPrint from "../print/requisition";
 
 
 const SAHRTApprovalList = () => {
@@ -37,14 +41,15 @@ const SAHRTApprovalList = () => {
     const columns = [
         { name: "Select", selector: (row) => row.select, sortable: true, align: 'text-center' },
         { name: "Requisition No", selector: (row) => row.requisitionNumber, sortable: true, align: 'text-left' },
+        { name: "Participant", selector: (row) => row.initiatingOfficer, sortable: true, align: 'text-left' },
+        { name: "Designation", selector: (row) => row.designation, sortable: true, align: 'text-center' },
         { name: "Course", selector: (row) => row.courseName, sortable: true, align: 'text-left' },
         { name: "Organizer", selector: (row) => row.organizer, sortable: true, align: 'text-left' },
         { name: "Duration (Day)", selector: (row) => row.duration, sortable: true, align: 'text-center' },
         { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: 'text-center' },
         { name: "To Date", selector: (row) => row.toDate, sortable: true, align: 'text-center' },
-        { name: "Participant", selector: (row) => row.initiatingOfficer, sortable: true, align: 'text-left' },
-        { name: "Designation", selector: (row) => row.designation, sortable: true, align: 'text-center' },
         { name: "Status", selector: (row) => row.status, sortable: true, align: 'text-left' },
+        { name: "Action", selector: (row) => row.action, sortable: true, align: 'text-center' },
     ];
 
 
@@ -84,7 +89,55 @@ const SAHRTApprovalList = () => {
                 >
                     {item.statusName || "Unknown"}
                 </span>,
+            action: (
+                <>
+                    <Tooltip id="Tooltip" className='text-white' />
+                    <button
+                        className="print"
+                        onClick={() => handlePrint(item)}
+                        data-tooltip-id="Tooltip"
+                        data-tooltip-content="Print"
+                        data-tooltip-place="top"
+                    >
+                        <FaEye className="fs-6" />
+                    </button>
+                </>
+            )
         }));
+    };
+
+
+    const handlePrint = async (item) => {
+        try {
+            if (!item?.requisitionId) {
+                Swal.fire("Warning", "Invalid requisition selected.", "warning");
+                return;
+            }
+
+            const response = await getRequisitionPrint(item.requisitionId);
+
+            if (!response?.data) {
+                Swal.fire("Warning", "Requisition data not found.", "warning");
+                return;
+            }
+
+            const labResponse = await getLabMasterData();
+
+            if (!labResponse?.data) {
+                Swal.fire("Warning", "Lab details not found.", "warning");
+                return;
+            }
+
+            await RequisitionPrint(response.data, labResponse.data);
+        } catch (error) {
+            console.error("Print Error:", error);
+
+            Swal.fire(
+                "Warning",
+                error?.response?.data?.message || "Something went wrong while generating the print.",
+                "warning"
+            );
+        }
     };
 
     const handleCheckboxChange = (item, checked) => {
@@ -109,6 +162,7 @@ const SAHRTApprovalList = () => {
             fromDate: item.fromDate,
             toDate: item.toDate,
             registrationFee: item.registrationFee,
+            isGroup: item.isGroup || "N",
         }
         localStorage.setItem('transactionData', JSON.stringify(dto));
         window.open('/transaction', '_blank');
@@ -161,7 +215,7 @@ const SAHRTApprovalList = () => {
 
     return (
         <div>
-
+            <Navbar />
             <h3 className="fancy-heading mt-3">
                 Requisition Approved List
                 <span className="underline-glow">

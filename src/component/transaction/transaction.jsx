@@ -101,6 +101,7 @@ const Transaction = () => {
     const commonSteps = [
         { code: "AA", label: "Created by user" },
         { code: "AR", label: "Recommended by DH" },
+        { code: "AG", label: "Recommended by GH" },
         { code: "AS", label: "Verified By SA-HRT" },
         { code: "AV", label: "Approved by AD-HRT" },
         { code: "CO", label: "Approved By Director" }
@@ -109,6 +110,7 @@ const Transaction = () => {
     const paidBaseSteps = [
         { code: "AA", label: "Created by user" },
         { code: "AR", label: "Recommended by DH" },
+        { code: "AG", label: "Recommended by GH" },
         { code: "AS", label: "Verified By SA-HRT" },
         { code: "CA", label: "Checked By CAG" },
         { code: "AV", label: "Approved by AD-HRT" },
@@ -118,6 +120,7 @@ const Transaction = () => {
     const financeSteps = [
         { code: "AA", label: "Created by user" },
         { code: "AR", label: "Recommended by DH" },
+        { code: "AG", label: "Recommended by GH" },
         { code: "AS", label: "Verified By SA-HRT" },
         { code: "CA", label: "Checked By CAG" },
         { code: "AV", label: "Approved by AD-HRT" },
@@ -126,8 +129,8 @@ const Transaction = () => {
         { code: "FA", label: "Final Approved By Director" }
     ];
 
-    const prepareStepper = (transactions = [], registrationFee) => {
-        // create status map
+    const prepareStepper = (transactions = [], registrationFee, isGroup) => {
+
         const statusMap = {};
         transactions.forEach((t) => {
             statusMap[t.statusCode] = t;
@@ -139,10 +142,8 @@ const Transaction = () => {
         if (registrationFee === 0) {
             steps = [...commonSteps];
         }
-
         // PAID TRAINING
         else {
-
             if (registrationFee < cashLimit[0]?.cashLimit) {
                 steps = [...commonSteps];
             } else if (registrationFee >= cashLimit[0]?.cashLimit) {
@@ -151,9 +152,8 @@ const Transaction = () => {
                 steps = [...commonSteps];
             }
 
-            // check if FC exists in transaction
             const hasFinance = transactions.some(
-                (t) => t.statusCode === "DA" || t.statusCode === "FC" || t.statusCode === "FA"
+                (t) => ["DA", "FC", "FA"].includes(t.statusCode)
             );
 
             if (hasFinance) {
@@ -161,9 +161,15 @@ const Transaction = () => {
             }
         }
 
-        // attach color + completed
-        const finalSteps = steps.map((step) => {
+        // Show AG only for group, otherwise AR
+        steps = steps.filter(step => {
+            if (isGroup === "Y") {
+                return step.code !== "AR";
+            }
+            return step.code !== "AG";
+        });
 
+        return steps.map(step => {
             const txn = statusMap[step.code];
 
             return {
@@ -172,15 +178,14 @@ const Transaction = () => {
                 colorCode: txn ? txn.colorCode : null
             };
         });
-
-        return finalSteps;
     };
 
     const steps = prepareStepper(
         transactionDetails,
-        reqData?.registrationFee
+        reqData?.registrationFee,
+        reqData?.isGroup
     );
-
+    
 
     return (
         <>

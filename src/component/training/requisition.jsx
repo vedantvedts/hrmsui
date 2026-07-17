@@ -373,6 +373,7 @@ const Requisition = () => {
             fromDate: item.fromDate,
             toDate: item.toDate,
             registrationFee: item.registrationFee,
+            isGroup: item.isGroup || "N",
         }
         localStorage.setItem('transactionData', JSON.stringify(dto));
         window.open('/transaction', '_blank');
