@@ -205,8 +205,9 @@ const Datatable = ({ columns, data, innerColumns }) => {
                     <td
                       key={colIndex}
                       className={`table-cell ${column.align || ''} ${column.bgColor ? 'custom-column-bg' : ''}`}
-                      data-width={column.width || ''}
+                      // data-width={column.width || ''}
                       data-bgcolor={typeof column.bgColor === 'function' ? column.bgColor(row) : column.bgColor || ''}
+                      style={{ width: column.width}}
                     >
                       {column.selector(row)}
                     </td>

@@ -68,15 +68,15 @@ const RequisitionApproval = () => {
     };
 
     const columns = [
-        { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center' },
-        { name: "Requisition No", selector: (row) => row.requisitionNumber, sortable: true, align: 'text-left' },
+        { name: "SN", selector: (row) => row.sn, sortable: true, align: 'text-center', width: '60px' },
+        { name: "Requisition No", selector: (row) => row.requisitionNumber, sortable: true, align: 'text-left', width: '200px' },
         { name: "Participant", selector: (row) => row.initiatingOfficer, sortable: true, align: 'text-left' },
         { name: "Designation", selector: (row) => row.designation, sortable: true, align: 'text-center' },
         { name: "Course", selector: (row) => row.courseName, sortable: true, align: 'text-left' },
         { name: "Organizer", selector: (row) => row.organizer, sortable: true, align: 'text-left' },
         { name: "Duration (Day)", selector: (row) => row.duration, sortable: true, align: 'text-center' },
-        { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: 'text-center' },
-        { name: "To Date", selector: (row) => row.toDate, sortable: true, align: 'text-center' },
+        { name: "From Date", selector: (row) => row.fromDate, sortable: true, align: 'text-center', width: '120px' },
+        { name: "To Date", selector: (row) => row.toDate, sortable: true, align: 'text-center', width: '120px' },
         ...(selectedTab === "forwarded"
             ? [
                 {
@@ -109,7 +109,8 @@ const RequisitionApproval = () => {
             name: "Status",
             selector: (row) => row.status,
             sortable: true,
-            align: "text-left"
+            align: "text-left",
+            width: '150px'
         },
 
         ...(selectedTab === "forwarded"
@@ -118,7 +119,8 @@ const RequisitionApproval = () => {
                     name: "Action",
                     selector: (row) => row.action,
                     sortable: true,
-                    align: "text-center"
+                    align: "text-center",
+                    width: '120px'
                 }
             ]
             : [])
@@ -203,6 +205,7 @@ const RequisitionApproval = () => {
             fromDate: item.fromDate,
             toDate: item.toDate,
             registrationFee: item.registrationFee,
+            isGroup: item.isGroup || "N",
         }
         localStorage.setItem('transactionData', JSON.stringify(dto));
         window.open('/transaction', '_blank');

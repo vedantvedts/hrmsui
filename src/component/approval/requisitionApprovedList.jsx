@@ -31,11 +31,8 @@ const RequisitionApprovedList = () => {
     return (
         <div>
             <Navbar />
-
             {
-                approvalType === "SA_HRT" ? (
-                    <SAHRTApprovalList />
-                ) : approvalType === "DIRECTOR" ? (
+                ["DIRECTOR", "SA_HRT"].includes(approvalType) ? (
                     <DirectorApprovalList />
                 ) : (
                     <div className="d-flex flex-column align-items-center justify-content-center" style={{ height: "30vh" }}>
